@@ -206,6 +206,18 @@ public class Util {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		String s;
 		while ((s = br.readLine()) != null) {
+			if (s.equals("quit") || s.equals("q")) return;
+			if (s.equals("exit")) return;
+			if (s.equals("?") || s.startsWith("h")) {
+				System.out.println("Enter a test result value to get a hashcode to use for it.");
+				System.out.println("Examples: true \"hello\\n\" -777 'x'");
+				System.out.println("But only one value per line.");
+				System.out.println("If a class in the classpath has a static method 'fromString' that accepts a String,");
+				System.out.println("then one can write ?fully.qualified.class.name literalstring");
+				System.out.println("For example:");
+				System.out.println("?edu.uwm.cs351.Rational 3/5");
+				continue;
+			}
 			Object o = parseObject(s);
 			System.out.println("hash for " + s + " = " + hash(o));
 		}
