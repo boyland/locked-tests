@@ -142,7 +142,7 @@ public class LockedTestCase extends TestCase {
 	}
 	
 	protected char Tc(int key) {
-		Character c = (Character)T(key,"Integer");
+		Character c = (Character)T(key,"Character");
 		return c.charValue();
 	}
 	

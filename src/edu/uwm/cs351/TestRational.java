@@ -7,7 +7,7 @@ public class TestRational extends LockedTestCase {
 	Rational one = new Rational(1);
 	Rational half = new Rational(1,2);
 	
-	public void testSimple() {
+	public void test0() {
 		assertEquals(Ts(898146272),one.toString());
 		assertEquals(Ts(1325465892),half.toString());
 		assertEquals(Tb(187695053),one.equals(new Rational(1)));
@@ -17,8 +17,9 @@ public class TestRational extends LockedTestCase {
 		assertEquals(Tb(1175806565),half.equals(new Rational(2,4)));
 	}
 	
-	public void testAdd() {
+	public void test1() {
 		assertEquals(Ts(1549167507),half.add(half).toString());
+		assertEquals(Tc(753076128),half.toString().charAt(1));
 		Rational two = one.add(one);
 		assertEquals(Ts(1985951271),two.toString());
 		assertEquals(T(973866810),half.add(half));
