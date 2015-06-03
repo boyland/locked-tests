@@ -17,51 +17,114 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 public class LockedTestCase extends TestCase {
+	
+	private static class Info {
+		final File testFile;
+		final Map<Integer,Object> keys;
+		final List<String> replacements;
+	
+		Info(File f) {
+			testFile = f;
+			keys = new HashMap<Integer,Object>();
+			replacements = new ArrayList<String>();
+			read();
+		}
+		
+		public void read() {
+			try {
+				if (testFile.canRead()) {
+					BufferedReader br = new BufferedReader(new FileReader(testFile));
+					String in;
+					while ((in = br.readLine()) != null) {
+						int eqi = in.indexOf('=');
+						if (eqi == -1) {
+							System.err.println("test corrupted (1): " + in);
+						} else {
+							try {
+								int key = Integer.parseInt(in.substring(0,eqi));
+								Object val = Util.parseObject(in.substring(eqi+1));
+								if (Util.checkHash(key, val)) {
+									put(key, val);
+								} else {
+									System.err.println("test corrupted (2): " + in);
+								}
+							} catch (NumberFormatException e) {
+								System.err.println("test corrupted (3): " + in);
+							} catch (ParseException e) {
+								System.err.println("test corrupted (4): " + in);
+							}
+						}
+					}
+					br.close();
+				} else {
+					write();
+				}
+			} catch (FileNotFoundException e) {
+				System.err.println("Cannot locate/write test key file " + e);
+				System.err.println("Testing aborted.");
+				System.exit(100);
+			} catch (IOException e) {
+				System.err.println("Error while reading/writing test key file: " + e);
+				System.err.println("Testing aborted.");
+				System.exit(100);
+			}
+		}
+		
+		/**
+		 * @param key
+		 * @param val
+		 */
+		private void put(int key, Object val) {
+			if (keys.put(key, val) != null) return;
+			replacements.add("T(" + key + ")");
+			String string = Util.toString(val);
+			replacements.add(string);
+			if (val instanceof Boolean) { 
+				replacements.add("Tb(" + key + ")");
+				replacements.add(string);
+			} else if (val instanceof Integer) {
+				replacements.add("Ti(" + key + ")");
+				replacements.add(string);
+			} else if (val instanceof Character) {
+				replacements.add("Tc(" + key + ")");
+				replacements.add(string);
+			} else if (val instanceof String) {
+				replacements.add("Ts(" + key + ")");
+				replacements.add(string);
+			}
+		}
 
-	private final File testFile;
-	private final Map<Integer,Object> keys = new HashMap<Integer,Object>();
-	private final List<String> replacements = new ArrayList<String>();
+		public void write() throws IOException {
+			PrintWriter pw = new PrintWriter(new FileWriter(testFile));
+			for (Map.Entry<Integer, Object> e : keys.entrySet()) {
+				int key = e.getKey();
+				Object value = e.getValue();
+				if (Util.checkHash(key, value)) {
+					pw.println(key + "=" + Util.toString(value));
+				} else {
+					pw.close();
+					throw new IOException("internal test cases corrupted.");
+				}
+			}
+			pw.close();
+		}
+    }
+
+	private static Map<String,Info> allLockedTestInfo = new HashMap<String,Info>();
+	
+	private static Info getLockedTestInfo(String filename) {
+		Info result = allLockedTestInfo.get(filename);
+		if (result == null) {
+			result = new Info(new File(filename));
+			allLockedTestInfo.put(filename, result);
+		}
+		return result;
+	}
+	private Info lockedTestInfo;
 	
 	protected LockedTestCase() {
 		String className = this.getClass().getSimpleName();
-		testFile = new File(className + ".tst");
-		try {
-			if (testFile.canRead()) {
-				BufferedReader br = new BufferedReader(new FileReader(testFile));
-				String in;
-				while ((in = br.readLine()) != null) {
-					int eqi = in.indexOf('=');
-					if (eqi == -1) {
-						System.err.println("test corrupted (1): " + in);
-					} else {
-						try {
-							int key = Integer.parseInt(in.substring(0,eqi));
-							Object val = Util.parseObject(in.substring(eqi+1));
-							if (Util.checkHash(key, val)) {
-								addKey(key, val);
-							} else {
-								System.err.println("test corrupted (2): " + in);
-							}
-						} catch (NumberFormatException e) {
-							System.err.println("test corrupted (3): " + in);
-						} catch (ParseException e) {
-							System.err.println("test corrupted (4): " + in);
-						}
-					}
-				}
-				br.close();
-			} else {
-				writeTestFile();
-			}
-		} catch (FileNotFoundException e) {
-			System.err.println("Cannot locate/write test key file " + e);
-			System.err.println("Testing aborted.");
-			System.exit(100);
-		} catch (IOException e) {
-			System.err.println("Error while reading/writing test key file: " + e);
-			System.err.println("Testing aborted.");
-			System.exit(100);
-		}
+		lockedTestInfo = getLockedTestInfo(className + ".tst");
 	}
 
 	/**
@@ -69,44 +132,17 @@ public class LockedTestCase extends TestCase {
 	 * @param val
 	 */
 	private void addKey(int key, Object val) {
-		if (keys.put(key, val) != null) return;
-		replacements.add("T(" + key + ")");
-		String string = Util.toString(val);
-		replacements.add(string);
-		if (val instanceof Boolean) { 
-			replacements.add("Tb(" + key + ")");
-			replacements.add(string);
-		} else if (val instanceof Integer) {
-			replacements.add("Ti(" + key + ")");
-			replacements.add(string);
-		} else if (val instanceof Character) {
-			replacements.add("Tc(" + key + ")");
-			replacements.add(string);
-		} else if (val instanceof String) {
-			replacements.add("Ts(" + key + ")");
-			replacements.add(string);
-		}
+		lockedTestInfo.put(key, val);
 	}
 
 	private void writeTestFile() throws IOException {
-		PrintWriter pw = new PrintWriter(new FileWriter(testFile));
-		for (Map.Entry<Integer, Object> e : keys.entrySet()) {
-			int key = e.getKey();
-			Object value = e.getValue();
-			if (Util.checkHash(key, value)) {
-				pw.println(key + "=" + Util.toString(value));
-			} else {
-				pw.close();
-				throw new IOException("internal test cases corrupted.");
-			}
-		}
-		pw.close();
+		lockedTestInfo.write();
 	}
 
 	private Object T(int key, String type) {
 		Object result = Util.ERROR_OBJECT;
 		Integer okey = new Integer(key);
-		if (keys.containsKey(okey)) result = keys.get(okey);
+		if (lockedTestInfo.keys.containsKey(okey)) result = lockedTestInfo.keys.get(okey);
 		else {
 			result = askUser(key,type);
 			if (result != Util.ERROR_OBJECT && Util.checkHash(key, result)) {
@@ -180,6 +216,7 @@ public class LockedTestCase extends TestCase {
 			return Util.ERROR_OBJECT;
 		}
 		int l;
+		List<String> replacements = lockedTestInfo.replacements;
 		for (l=lno-1; l >= 1 && contents[l].indexOf("void test") < 0; --l) {
 			String line = contents[l];
 			for (int j=0; j < replacements.size(); j += 2) {
