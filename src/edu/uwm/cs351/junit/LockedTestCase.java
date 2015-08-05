@@ -9,9 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -21,12 +19,12 @@ public class LockedTestCase extends TestCase {
 	private static class Info {
 		final File testFile;
 		final Map<Integer,Object> keys;
-		final List<String> replacements;
+		final Map<String,String> replacements;
 	
 		Info(File f) {
 			testFile = f;
 			keys = new HashMap<Integer,Object>();
-			replacements = new ArrayList<String>();
+			replacements = new HashMap<String,String>();
 			read();
 		}
 		
@@ -44,7 +42,7 @@ public class LockedTestCase extends TestCase {
 								int key = Integer.parseInt(in.substring(0,eqi));
 								Object val = Util.parseObject(in.substring(eqi+1));
 								if (Util.checkHash(key, val)) {
-									put(key, val);
+									put("T", key, val);
 								} else {
 									System.err.println("test corrupted (2): " + in);
 								}
@@ -74,26 +72,16 @@ public class LockedTestCase extends TestCase {
 		 * @param key
 		 * @param val
 		 */
-		private void put(int key, Object val) {
-			if (keys.put(key, val) != null) return;
-			replacements.add("T(" + key + ")");
-			String string = Util.toString(val);
-			replacements.add(string);
-			if (val instanceof Boolean) { 
-				replacements.add("Tb(" + key + ")");
-				replacements.add(string);
-			} else if (val instanceof Integer) {
-				replacements.add("Ti(" + key + ")");
-				replacements.add(string);
-			} else if (val instanceof Character) {
-				replacements.add("Tc(" + key + ")");
-				replacements.add(string);
-			} else if (val instanceof String) {
-				replacements.add("Ts(" + key + ")");
-				replacements.add(string);
-			}
+		void put(String target, int key, Object val) {
+			putReplace(target,key,val);
+			keys.put(key, val);
 		}
 
+		void putReplace(String target, int key, Object val) {
+			System.out.println("replace " +target + "(" + key + ") with " + val );
+			replacements.put(target + "(" + key + ")", Util.toString(val));
+		}
+		
 		public void write() throws IOException {
 			PrintWriter pw = new PrintWriter(new FileWriter(testFile));
 			for (Map.Entry<Integer, Object> e : keys.entrySet()) {
@@ -131,22 +119,24 @@ public class LockedTestCase extends TestCase {
 	 * @param key
 	 * @param val
 	 */
-	private void addKey(int key, Object val) {
-		lockedTestInfo.put(key, val);
+	private void addKey(String target, int key, Object val) {
+		lockedTestInfo.put(target, key, val);
 	}
 
 	private void writeTestFile() throws IOException {
 		lockedTestInfo.write();
 	}
 
-	private Object T(int key, String type) {
+	protected Object T(int key, String type, String target) {
 		Object result = Util.ERROR_OBJECT;
 		Integer okey = new Integer(key);
-		if (lockedTestInfo.keys.containsKey(okey)) result = lockedTestInfo.keys.get(okey);
-		else {
-			result = askUser(key,type);
+		if (lockedTestInfo.keys.containsKey(okey)) {
+			result = lockedTestInfo.keys.get(okey);
+			lockedTestInfo.putReplace(target, key, result);
+		} else {
+			result = askUser(key,type,target);
 			if (result != Util.ERROR_OBJECT && Util.checkHash(key, result)) {
-				addKey(key, result);
+				addKey(target, key, result);
 				try {
 					writeTestFile();
 				} catch (IOException e) {
@@ -157,56 +147,46 @@ public class LockedTestCase extends TestCase {
 		if (result == Util.ERROR_OBJECT) {
 			assertFalse("test locked", true);
 		}
-		if (type != null && !type.equals(result.getClass().getSimpleName())) {
+		if (type != null && !type.equals(result.getClass().getName()) && !type.equals(result.getClass().getSimpleName())) {
 			assertFalse("test unlocked incorrectly with wrong type",true);
 		}
 		return result;
 	}
 	
 	protected Object T(int key) {
-		return T(key,null);
+		return T(key,null,"T");
 	}
 	
 	protected boolean Tb(int key) {
-		Boolean b = (Boolean)T(key,"Boolean");
+		Boolean b = (Boolean)T(key,"Boolean","Tb");
 		return b.booleanValue();
 	}
 	
 	protected int Ti(int key) {
-		Integer i = (Integer)T(key,"Integer");
+		Integer i = (Integer)T(key,"Integer","Ti");
 		return i.intValue();
 	}
 	
 	protected char Tc(int key) {
-		Character c = (Character)T(key,"Character");
+		Character c = (Character)T(key,"Character","Tc");
 		return c.charValue();
 	}
 	
 	protected String Ts(int key) {
-		return (String)T(key,"String");
+		return (String)T(key,"String","Ts");
 	}
 	
 	private BufferedReader input = null;
 	
-	private Object askUser(int key, String type) {
-		String target = "T";
-		if (type != null) {
-			if (type.equals("String")) {
-				target = "Ts";
-			} else if (type.equals("Integer")) {
-				target = "Ti";
-			} else if (type.equals("Character")) {
-				target = "Tc";
-			} else if (type.equals("Boolean")) {
-				target = "Tb";
-			}
-		}
+	private Object askUser(int key, String type, String target) {
 		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
 		int n = stack.length;
 		int i = 1;
 		for (; i < n; ++i) {
-			if (!stack[i].getClassName().equals(LockedTestCase.class.getCanonicalName())) break;
 			// System.out.println(stack[i]);
+			if (stack[i].getClassName().equals(LockedTestCase.class.getCanonicalName())) continue;
+			if (stack[i].getMethodName().equals(target)) continue;
+			break;
 		}
 		int lno = stack[i].getLineNumber();
 		// System.out.println(stack[i].getFileName()+":" + lno);
@@ -216,12 +196,10 @@ public class LockedTestCase extends TestCase {
 			return Util.ERROR_OBJECT;
 		}
 		int l;
-		List<String> replacements = lockedTestInfo.replacements;
 		for (l=lno-1; l >= 1 && contents[l].indexOf("void test") < 0; --l) {
 			String line = contents[l];
-			for (int j=0; j < replacements.size(); j += 2) {
-				// System.out.println("replacing " + replacements.get(j) + " with " + replacements.get(j+1));
-				line = line.replace(replacements.get(j), replacements.get(j+1));
+			for (Map.Entry<String,String> e : lockedTestInfo.replacements.entrySet()) {
+				line = line.replace(e.getKey(),e.getValue());
 			}
 			contents[l] = line;
 		}

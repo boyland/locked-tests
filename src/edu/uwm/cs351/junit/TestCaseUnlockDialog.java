@@ -77,8 +77,8 @@ public class TestCaseUnlockDialog extends JDialog {
 		c.weightx = 1.0;
 		c.gridwidth = 2;
 		this.add(createButtonPanel(),c);
-		Dimension d = this.getPreferredSize();
-		setSize(d.width+10,d.height+20); // fudge factors needed for some reason
+		// Dimension d = this.getPreferredSize();
+		// setSize(d.width,d.height+20); // fudge factors needed for some reason
 		setLocationRelativeTo(null);
 	}
 
@@ -93,7 +93,7 @@ public class TestCaseUnlockDialog extends JDialog {
 				w = code[i].length();
 			}
 		}
-		JTextArea codeArea = new JTextArea(code.length,w);
+		JTextArea codeArea = new JTextArea(code.length,w+20); // handle tabs, I think
 		codeArea.setEditable(false);
 		codeArea.setLineWrap(false);
 		StringBuilder allCode = new StringBuilder();
@@ -197,6 +197,8 @@ public class TestCaseUnlockDialog extends JDialog {
 			SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
 					TestCaseUnlockDialog d = new TestCaseUnlockDialog(code,type,key);
+					// Dimension dim = d.getPreferredSize();
+					// d.setSize(dim.width+100,dim.height+20); // fudge factors needed for some reason
 					d.pack();
 					d.valueField.requestFocusInWindow();
 					d.setVisible(true);

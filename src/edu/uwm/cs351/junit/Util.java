@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,13 +74,28 @@ public class Util {
 	private static Object fromString(Class<?> clazz, String s) {
 		try {
 			Method m = clazz.getMethod("fromString", String.class);
+			if (m == null) {
+				throw new ParseException("Class " + clazz + " has no static String method called 'fromString'");
+			}
 			Object result = m.invoke(null, s);
 			if (result != null) {
 				fromStringClasses.add(clazz.getCanonicalName());
 			}
+			if (result == null) {
+				throw new ParseException(clazz + ".fromString(String) returned null!");
+			}
 			return result;
+		} catch (ParseException e) {
+			throw e;
+		} catch (NumberFormatException e) {
+			throw e;
+		} catch (InvocationTargetException e) {
+			Throwable t = e.getCause();
+			if (t instanceof RuntimeException) throw (RuntimeException)t;
+			throw new ParseException("Error while trying to run " + clazz + ".fromString("+s+")");
 		} catch (Exception e) {
-			return null;
+			e.printStackTrace();
+			throw new ParseException("Error while trying to run " + clazz + ".fromString(String): " + e.getMessage());
 		}
 	}
 	
@@ -87,7 +103,7 @@ public class Util {
 		try {
 			return fromString(Class.forName(className),s);
 		} catch (ClassNotFoundException e) {
-			return null;
+			throw new ParseException("Unknown class: " + className);
 		}
 	}
 	
@@ -218,8 +234,18 @@ public class Util {
 				System.out.println("?edu.uwm.cs351.Rational 3/5");
 				continue;
 			}
-			Object o = parseObject(s);
-			System.out.println("hash for " + s + " = " + hash(o));
+			Object o;
+			try {
+				o = parseObject(s);
+				System.out.println("hash for " + s + " = " + hash(o));
+			} catch (ParseException e) {
+				System.err.println("Parse error: " + e.getMessage());
+			} catch (NumberFormatException e) {
+				System.err.println("Format error: " + e.getMessage());
+			} catch (RuntimeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		br.close();
 	}
