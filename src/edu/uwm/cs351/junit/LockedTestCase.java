@@ -78,7 +78,6 @@ public class LockedTestCase extends TestCase {
 		}
 
 		void putReplace(String target, int key, Object val) {
-			System.out.println("replace " +target + "(" + key + ") with " + val );
 			replacements.put(target + "(" + key + ")", Util.toString(val));
 		}
 		
