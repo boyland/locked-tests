@@ -78,7 +78,7 @@ public class TestCaseUnlockDialog extends JDialog {
 		c.gridwidth = 2;
 		this.add(createButtonPanel(),c);
 		Dimension d = this.getPreferredSize();
-		setSize(d.width,d.height+20); // fudge factor needed for some reason
+		setSize(d.width+10,d.height+20); // fudge factors needed for some reason
 		setLocationRelativeTo(null);
 	}
 
@@ -197,6 +197,8 @@ public class TestCaseUnlockDialog extends JDialog {
 			SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
 					TestCaseUnlockDialog d = new TestCaseUnlockDialog(code,type,key);
+					d.pack();
+					d.valueField.requestFocusInWindow();
 					d.setVisible(true);
 					if (d.complete) results.result = d.getObject();
 					d.dispose();
