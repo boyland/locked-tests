@@ -193,6 +193,10 @@ public class Util {
 	}
 	
 	public static String[] readSourceFile(String className) {
+		int dollar = className.indexOf('$');
+		if (dollar > 0) {
+			className = className.substring(0, dollar);
+		}
 		String filename = className.replace('.', File.separatorChar);
 		File source = new File("src" + File.separator + filename + ".java");
 		List<String> contents = new ArrayList<String>();
