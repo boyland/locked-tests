@@ -71,7 +71,8 @@ public class LockHandler extends AbstractHandler {
 		return null;
 	}
 	
-	private Void infoMessage(Shell shell, String message) {
+	@SuppressWarnings("unused")
+  private Void infoMessage(Shell shell, String message) {
 	  MessageDialog.openInformation(shell, "Locked Tests", message);
 	  return null;
 	}
