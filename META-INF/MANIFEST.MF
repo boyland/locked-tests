@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: locked-tests
 Bundle-SymbolicName: edu.uwm.cs.locked-tests;singleton:=true
-Bundle-Version: 0.1
+Bundle-Version: 0.2
 Export-Package: edu.uwm.cs,
  edu.uwm.cs.eclipse,
  edu.uwm.cs.junit

@@ -1,9 +1,7 @@
 package edu.uwm.cs.eclipse.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
@@ -19,7 +17,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import edu.uwm.cs.junit.Util;
 
 
-public class LockHandler extends AbstractHandler {
+public class LockHandler extends MyHandler {
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -65,26 +63,11 @@ public class LockHandler extends AbstractHandler {
     IDocument document = provider.getDocument(editor.getEditorInput());
     try {
       document.replace(selection.getOffset(), selection.getLength(), locked);
+      return infoMessage(shell,"Substituted with " + locked);
     } catch (BadLocationException e) {
       return errorMessage(shell,"Internal error: couldn't replace selection with " + locked);
     }
-		return null;
+		// return null;
 	}
-	
-	@SuppressWarnings("unused")
-  private Void infoMessage(Shell shell, String message) {
-	  MessageDialog.openInformation(shell, "Locked Tests", message);
-	  return null;
-	}
-	
-	private Void errorMessage(Shell shell, String message) {
-	  MessageDialog.openError(shell, "Locked Tests", message);
-	  return null;
-	}
-	
-  private Void warningMessage(Shell shell, String message) {
-    MessageDialog.openError(shell, "Locked Tests", message);
-    return null;
-  }
   
 }

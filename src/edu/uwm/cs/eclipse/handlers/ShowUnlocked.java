@@ -1,13 +1,12 @@
 package edu.uwm.cs.eclipse.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-public class ShowUnlocked extends AbstractHandler {
+public class ShowUnlocked extends MyHandler {
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -17,8 +16,8 @@ public class ShowUnlocked extends AbstractHandler {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
 		MessageDialog.openInformation(
 				window.getShell(),
-				"locked-tests",
-				"Hello, Eclipse world");
+				"Locked Tests",
+				"Not yet implemented.  Sorry");
 		return null;
 	}
 }

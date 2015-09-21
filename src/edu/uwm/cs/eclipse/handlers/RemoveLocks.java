@@ -7,7 +7,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-public class RemoveLocks extends AbstractHandler {
+public class RemoveLocks extends MyHandler {
 
 
 	/**
@@ -18,8 +18,8 @@ public class RemoveLocks extends AbstractHandler {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
 		MessageDialog.openInformation(
 				window.getShell(),
-				"locked-tests",
-				"Hello, Eclipse world");
+				"Locked Tests",
+				"Not yet implemented");
 		return null;
 	}
 }
