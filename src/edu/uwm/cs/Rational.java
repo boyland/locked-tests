@@ -1,4 +1,4 @@
-package edu.uwm.cs351;
+package edu.uwm.cs;
 
 public class Rational implements Comparable<Rational> {
 

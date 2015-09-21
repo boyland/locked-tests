@@ -1,4 +1,4 @@
-package edu.uwm.cs351.junit;
+package edu.uwm.cs.junit;
 
 public class ParseException extends RuntimeException {
 	/**

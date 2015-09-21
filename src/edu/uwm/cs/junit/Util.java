@@ -1,4 +1,4 @@
-package edu.uwm.cs351.junit;
+package edu.uwm.cs.junit;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -1,6 +1,6 @@
-package edu.uwm.cs351;
+package edu.uwm.cs;
 
-import edu.uwm.cs351.junit.LockedTestCase;
+import edu.uwm.cs.junit.LockedTestCase;
 
 public class TestRational extends LockedTestCase {
 

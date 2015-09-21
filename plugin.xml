@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="edu.uwm.cs.eclipse.handlers.SampleHandler"
+            commandId="edu.uwm.cs.locked-tests.commands.sampleCommand">
+      </handler>
+      <handler
+            class="edu.uwm.cs.eclipse.handlers.LockHandler"
+            commandId="edu.uwm.cs.locked-tests.commands.lock">
+      </handler>
+      <handler
+            class="edu.uwm.cs.eclipse.handlers.ShowUnlocked"
+            commandId="edu.uwm.cs.locked-tests.commands.showUnlocked">
+      </handler>
+      <handler
+            class="edu.uwm.cs.eclipse.handlers.RemoveLocks"
+            commandId="edu.uwm.cs.locked-tests.commands.removeLocks">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="edu.uwm.cs.locked-tests.commands.sampleCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:edit?after=additions">
+         <menu
+               id="edu.uwm.cs.locked-tests.menu"
+               label="Locked Tests"
+               mnemonic="L">
+            <command
+                  commandId="edu.uwm.cs.locked-tests.commands.sampleCommand"
+                  id="edu.uwm.cs.locked-tests.menus.sampleCommand"
+                  mnemonic="S">
+            </command>
+            <command
+                  commandId="edu.uwm.cs.locked-tests.commands.lock"
+                  id="edu.uwm.cs.locked-tests.menus.lock"
+                  mnemonic="L">
+            </command>
+            <command
+                  commandId="edu.uwm.cs.locked-tests.commands.showUnlocked"
+                  id="edu.uwm.cs.locked-tests.menus.showUnlocked"
+                  mnemonic="S">
+            </command>
+            <command
+                  commandId="edu.uwm.cs.locked-tests.commands.removeLocks"
+                  id="edu.uwm.cs.locked-tests.menus.removeLocks"
+                  mnemonic="R">
+            </command>
+         </menu>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="edu.uwm.cs.locked-tests.commands"
+            name="Category for Locked Test commands">
+      </category>
+      <command
+            categoryId="edu.uwm.cs.locked-tests.commands"
+            id="edu.uwm.cs.locked-tests.commands.sampleCommand"
+            name="Sample Command">
+      </command>
+      <command
+            categoryId="edu.uwm.cs.locked-tests.commands"
+            id="edu.uwm.cs.locked-tests.commands.lock"
+            name="Lock Command">
+      </command>
+      <command
+            categoryId="edu.uwm.cs.locked-tests.commands"
+            id="edu.uwm.cs.locked-tests.commands.showUnlocked"
+            name="Show Unlock Command">
+      </command>
+      <command
+            categoryId="edu.uwm.cs.locked-tests.commands"
+            id="edu.uwm.cs.locked-tests.commands.removeLocks"
+            name="Remove Locks Command">
+      </command>
+   </extension>
+
+</plugin>
