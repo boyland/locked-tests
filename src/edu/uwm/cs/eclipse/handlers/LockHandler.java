@@ -4,6 +4,7 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -58,12 +59,16 @@ public class LockHandler extends AbstractHandler {
 		  type = "Tc";
 		}
 		int hash = Util.hash(obj);
-		if (hash != 0) {
-		  return infoMessage(shell,"Replace with " + type + "(" + hash + ")");
-		}
+    String locked = type + "(" + hash + ")";
+		
 		IDocumentProvider provider = editor.getDocumentProvider();
     IDocument document = provider.getDocument(editor.getEditorInput());
-		return document;
+    try {
+      document.replace(selection.getOffset(), selection.getLength(), locked);
+    } catch (BadLocationException e) {
+      return errorMessage(shell,"Internal error: couldn't replace selection with " + locked);
+    }
+		return null;
 	}
 	
 	private Void infoMessage(Shell shell, String message) {

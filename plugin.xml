@@ -16,6 +16,16 @@
             commandId="edu.uwm.cs.locked-tests.commands.removeLocks">
       </handler>
    </extension>
+       <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="edu.uwm.cs.locked-tests.commands.lock"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+1">
+      </key>
+   </extension>
+   
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
