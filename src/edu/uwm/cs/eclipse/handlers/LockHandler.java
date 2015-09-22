@@ -63,11 +63,11 @@ public class LockHandler extends MyHandler {
     IDocument document = provider.getDocument(editor.getEditorInput());
     try {
       document.replace(selection.getOffset(), selection.getLength(), locked);
-      return infoMessage(shell,"Substituted with " + locked);
+      // return infoMessage(shell,"Substituted with " + locked);
     } catch (BadLocationException e) {
       return errorMessage(shell,"Internal error: couldn't replace selection with " + locked);
     }
-		// return null;
+		return null;
 	}
   
 }
