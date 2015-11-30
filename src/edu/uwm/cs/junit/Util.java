@@ -133,7 +133,7 @@ public class Util {
 		String result = o.toString();
 		Object check = fromString(clazz,result);
 		if (check != null && o.equals(check)) {
-			return "?" + clazz.getCanonicalName()+" "+result;
+			return "?" + clazz.getName()+" "+result;
 		}
 		throw new IllegalArgumentException("can't stringify " + o);
 	}
