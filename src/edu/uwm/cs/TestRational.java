@@ -23,5 +23,10 @@ public class TestRational extends LockedTestCase {
 		Rational two = one.add(one);
 		assertEquals(Ts(1985951271),two.toString());
 		assertEquals(T(973866810),half.add(half));
+		assertEquals(T(2083203738),half.add(one));
+	}
+	
+	public static void main(String[] args) {
+	  LockedTestCase.unlockAll("edu.uwm.cs.TestRational");
 	}
 }

@@ -235,7 +235,7 @@ public class Util {
 				System.out.println("If a class in the classpath has a static method 'fromString' that accepts a String,");
 				System.out.println("then one can write ?fully.qualified.class.name literalstring");
 				System.out.println("For example:");
-				System.out.println("?edu.uwm.cs351.Rational 3/5");
+				System.out.println("?edu.uwm.cs.Rational 3/5");
 				continue;
 			}
 			Object o;

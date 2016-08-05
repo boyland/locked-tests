@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -95,7 +97,12 @@ public class LockedTestCase extends TestCase {
 			}
 			pw.close();
 		}
+    
+    @Override
+    public String toString() {
+      return "Info(" + testFile + ") with " + keys.size() + " keys";
     }
+  }
 
 	private static Map<String,Info> allLockedTestInfo = new HashMap<String,Info>();
 	
@@ -110,7 +117,7 @@ public class LockedTestCase extends TestCase {
 	private Info lockedTestInfo;
 	
 	protected LockedTestCase() {
-		String className = this.getClass().getSimpleName();
+		String className = this.getClass().getCanonicalName();
 		lockedTestInfo = getLockedTestInfo(className + ".tst");
 	}
 
@@ -175,7 +182,7 @@ public class LockedTestCase extends TestCase {
 		return (String)T(key,"String","Ts");
 	}
 	
-	private BufferedReader input = null;
+	private static BufferedReader input = null;
 	
 	private Object askUser(int key, String type, String target) {
 		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
@@ -189,7 +196,25 @@ public class LockedTestCase extends TestCase {
 		}
 		int lno = stack[i].getLineNumber();
 		// System.out.println(stack[i].getFileName()+":" + lno);
-		String[] contents = Util.readSourceFile(stack[i].getClassName());
+		String className = stack[i].getClassName();
+    return askUser(lockedTestInfo, className, lno, key, type, target);
+	}
+
+  /**
+   * Ask the user to resolve the test at a particular
+   * line of the particular test case.
+   * The line should include the text: target + "(" + key + ")".
+   * @param info TODO
+   * @param className
+   * @param lno
+   * @param key
+   * @param type Java type of the 
+   * @param target lock text (e.g. "Ti")
+   * @return
+   */
+  private static Object askUser(Info info, String className, int lno, int key,
+      String type, String target) {
+    String[] contents = Util.readSourceFile(className);
 		if (contents.length <= lno) {
 			System.err.println("Can't find test case asking for unlocking.");
 			return Util.ERROR_OBJECT;
@@ -197,7 +222,7 @@ public class LockedTestCase extends TestCase {
 		int l;
 		for (l=lno-1; l >= 1 && contents[l].indexOf("void test") < 0; --l) {
 			String line = contents[l];
-			for (Map.Entry<String,String> e : lockedTestInfo.replacements.entrySet()) {
+			for (Map.Entry<String,String> e : info.replacements.entrySet()) {
 				line = line.replace(e.getKey(),e.getValue());
 			}
 			contents[l] = line;
@@ -240,5 +265,55 @@ public class LockedTestCase extends TestCase {
 			System.err.println("A serious error occurred.");
 		}
 		return Util.ERROR_OBJECT;
-	}
+  }
+  
+  /**
+   * Find all locked tests in the given class name (a locked JUnit test).
+   * @param classname name of the class including locked tests.
+   */
+  public static void unlockAll(String className) {
+    String[] contents = Util.readSourceFile(className);
+    // System.out.println("contents = " + Arrays.toString(contents));
+    if (contents.length <= 1) return;
+    Info info = getLockedTestInfo(className+".tst");
+    /* System.out.println("Info = " + info);
+    for (Map.Entry<String,String> e : info.replacements.entrySet()) {
+      System.out.println(e.getKey() + " = " + e.getValue());
+    }*/
+    Pattern pattern = Pattern.compile("(T[a-zA-z]*)\\(([0-9]+)\\)");
+    try {
+      for (int i=1; i < contents.length; ++i) {
+        Matcher m = pattern.matcher(contents[i]);
+        while (m.find()) {
+          String target = m.group(1);
+          String keystring = m.group(2);
+          int key = Integer.parseInt(keystring);
+          String type = null;
+          switch (target) {
+          default: break;
+          case "Ti": type = "Integer"; break;
+          case "Ts": type = "String"; break;
+          case "Tb": type = "Boolean"; break;
+          case "Tc": type = "Character"; break;
+          }
+          if (info.keys.containsKey(key)) {
+            info.putReplace(target, key, info.keys.get(key));
+          } else if (!info.keys.containsKey(key)) {
+            Object result = askUser(info,className,i,key,type,target);
+            if (result != Util.ERROR_OBJECT && Util.checkHash(key, result)) {
+              info.put(target, key, result);
+            } else {
+              return;
+            }
+          }
+        }
+      }
+    } finally {
+      try {
+        info.write();
+      } catch (IOException e) {
+        System.err.println("Warning: test key file writing crashed; Test cases may be locked again.");
+      }
+    }
+  }
 }

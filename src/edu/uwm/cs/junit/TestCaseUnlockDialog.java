@@ -156,7 +156,7 @@ public class TestCaseUnlockDialog extends JDialog {
 	
 	public Object getObject() throws NumberFormatException, ParseException {
 		String s = valueField.getText();
-		if (type.equals("BUILT_IN")) return Util.parseObject(s);
+		if (type == null || type.equals("BUILT_IN")) return Util.parseObject(s);
 		else if (type.equals("Integer")) return new Integer(Integer.parseInt(s));
 		else if (type.equals("String")) return Util.unescape(s);
 		else if (type.equals("Character")) return Util.unescape(s).charAt(0);
@@ -178,6 +178,7 @@ public class TestCaseUnlockDialog extends JDialog {
 				JOptionPane.showMessageDialog(this, "Not the correct value", "Failure", JOptionPane.ERROR_MESSAGE);
 			}
 		} catch (RuntimeException e) {
+		  e.printStackTrace();
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot read value", JOptionPane.ERROR_MESSAGE);
 		}
 	}
