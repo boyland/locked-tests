@@ -115,7 +115,7 @@ public class Util {
 	
 	public static String toString(Object o) {
 		if (o == null) return "null";
-		if (o instanceof Integer || o instanceof Boolean) return o.toString();
+		if (o instanceof Integer || o instanceof Boolean || o instanceof Float) return o.toString();
 		if (o instanceof Character) {
 			return "'" + escape((Character)o) + "'";
 		}
@@ -142,9 +142,15 @@ public class Util {
 		if (s == null || s.length() < 1) throw new ParseException("cannot parse '" + s + "'");
 		switch (s.charAt(0)) {
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-			return Integer.parseInt(s);
+		  if (s.indexOf('.') == -1)
+		    return Integer.parseInt(s);
+		  else
+		    return Float.parseFloat(s);
 		case '-':
-			return -Integer.parseInt(s.substring(1));
+      if (s.indexOf('.') == -1)
+        return -Integer.parseInt(s.substring(1));
+      else
+        return -Float.parseFloat(s.substring(1));
 		case '"':
 			if (s.length() < 2 || s.charAt(s.length()-1) != '"') throw new ParseException("cannot parse '" + s + "'");
 			return unescape(s.substring(1, s.length()-1));
@@ -230,7 +236,7 @@ public class Util {
 			if (s.equals("exit")) return;
 			if (s.equals("?") || s.startsWith("h")) {
 				System.out.println("Enter a test result value to get a hashcode to use for it.");
-				System.out.println("Examples: true \"hello\\n\" -777 'x'");
+				System.out.println("Examples: true \"hello\\n\" -777 'x'i -3.14159");
 				System.out.println("But only one value per line.");
 				System.out.println("If a class in the classpath has a static method 'fromString' that accepts a String,");
 				System.out.println("then one can write ?fully.qualified.class.name literalstring");

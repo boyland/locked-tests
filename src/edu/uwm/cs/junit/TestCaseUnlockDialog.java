@@ -158,6 +158,7 @@ public class TestCaseUnlockDialog extends JDialog {
 		String s = valueField.getText();
 		if (type == null || type.equals("BUILT_IN")) return Util.parseObject(s);
 		else if (type.equals("Integer")) return new Integer(Integer.parseInt(s));
+		else if (type.equals("Float")) return new Float(Float.parseFloat(s));
 		else if (type.equals("String")) return Util.unescape(s);
 		else if (type.equals("Character")) return Util.unescape(s).charAt(0);
 		else if (type.equals("Boolean")) {

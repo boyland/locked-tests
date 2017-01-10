@@ -182,6 +182,11 @@ public class LockedTestCase extends TestCase {
 		return (String)T(key,"String","Ts");
 	}
 	
+	protected float Tf(int key) {
+	  Float f = (Float)T(key,"Float","Tf");
+	  return f.floatValue();
+	}
+	
 	private static BufferedReader input = null;
 	
 	private Object askUser(int key, String type, String target) {
@@ -295,6 +300,7 @@ public class LockedTestCase extends TestCase {
           case "Ts": type = "String"; break;
           case "Tb": type = "Boolean"; break;
           case "Tc": type = "Character"; break;
+          case "Tf": type = "Float"; break;
           }
           if (info.keys.containsKey(key)) {
             info.putReplace(target, key, info.keys.get(key));
