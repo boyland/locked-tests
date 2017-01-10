@@ -18,7 +18,7 @@ run is shown to the user with unlocked tests revealed to their actual value.  Th
 more help on input; the command-line interface uses a single way to read any run-time value.
 
 The following test case results can be encoded:
-- Primitive types: int, char and boolean
+- Primitive types: int, float, char and boolean
 - Predefined types: String
 - User-defined types: any class with a public static "fromString" method taking a string.
 
