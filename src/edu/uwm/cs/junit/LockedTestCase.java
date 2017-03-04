@@ -277,10 +277,13 @@ public class LockedTestCase extends TestCase {
    * @param classname name of the class including locked tests.
    */
   public static void unlockAll(String className) {
+	unlockAll(className,className);
+  }
+  public static void unlockAll(String infoName, String className) {
+	Info info = getLockedTestInfo(infoName+".tst");
     String[] contents = Util.readSourceFile(className);
     // System.out.println("contents = " + Arrays.toString(contents));
     if (contents.length <= 1) return;
-    Info info = getLockedTestInfo(className+".tst");
     /* System.out.println("Info = " + info);
     for (Map.Entry<String,String> e : info.replacements.entrySet()) {
       System.out.println(e.getKey() + " = " + e.getValue());
