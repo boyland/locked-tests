@@ -29,47 +29,47 @@ public class LockHandler extends MyHandler {
 		IWorkbenchPage page = window.getActivePage();
 		IEditorPart ed = page.getActiveEditor();
 		if (!(ed instanceof ITextEditor)) {
-		  return warningMessage(shell,"Current window does not eappar to be text.");
+			return warningMessage(shell,"Current window does not appear to be text.");
 		}
 		ITextEditor editor = (ITextEditor)ed;
 		ISelection sel = editor.getSelectionProvider().getSelection();
-    if (sel.isEmpty()) {
-      return errorMessage(shell,"Need expression to lock");
-    }
+		if (sel.isEmpty()) {
+			return errorMessage(shell,"Need expression to lock");
+		}
 		if (!(sel instanceof ITextSelection)) {
-		  return errorMessage(shell,"Current selection does not appear to be text.");
+			return errorMessage(shell,"Current selection does not appear to be text.");
 		}
 		ITextSelection selection = (ITextSelection)sel;
 		Object obj;
 		try {
-		  obj = Util.parseObject(selection.getText());
+			obj = Util.parseObject(selection.getText());
 		} catch (RuntimeException ex) {
-		  return errorMessage(shell,"Could not parse literal: " + ex.getLocalizedMessage());
+			return errorMessage(shell,"Could not parse literal: " + ex.getLocalizedMessage());
 		}
 		String type = "T";
 		if (obj instanceof Integer) {
-		  type = "Ti";
+			type = "Ti";
 		} else if (obj instanceof Boolean) {
-		  type = "Tb";
+			type = "Tb";
 		} else if (obj instanceof String) {
-		  type = "Ts";
+			type = "Ts";
 		} else if (obj instanceof Character) {
-		  type = "Tc";
+			type = "Tc";
 		} else if (obj instanceof Float) {
-		  type = "Tf";
+			type = "Tf";
 		}
 		int hash = Util.hash(obj);
-    String locked = type + "(" + hash + ")";
-		
+		String locked = type + "(" + hash + ")";
+
 		IDocumentProvider provider = editor.getDocumentProvider();
-    IDocument document = provider.getDocument(editor.getEditorInput());
-    try {
-      document.replace(selection.getOffset(), selection.getLength(), locked);
-      // return infoMessage(shell,"Substituted with " + locked);
-    } catch (BadLocationException e) {
-      return errorMessage(shell,"Internal error: couldn't replace selection with " + locked);
-    }
+		IDocument document = provider.getDocument(editor.getEditorInput());
+		try {
+			document.replace(selection.getOffset(), selection.getLength(), locked);
+			// return infoMessage(shell,"Substituted with " + locked);
+		} catch (BadLocationException e) {
+			return errorMessage(shell,"Internal error: couldn't replace selection with " + locked);
+		}
 		return null;
 	}
-  
+
 }

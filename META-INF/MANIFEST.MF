@@ -3,7 +3,7 @@ Main-Class: edu/uwm/cs/junit/Util
 Bundle-ManifestVersion: 2
 Bundle-Name: locked-tests
 Bundle-SymbolicName: edu.uwm.cs.locked-tests;singleton:=true
-Bundle-Version: 0.3
+Bundle-Version: 0.4
 Export-Package: edu.uwm.cs,
  edu.uwm.cs.eclipse,
  edu.uwm.cs.junit
@@ -14,6 +14,7 @@ Require-Bundle: org.eclipse.ui;bundle-version="3.104.0",
  org.eclipse.core.runtime;bundle-version="3.8.0",
  org.eclipse.e4.core.commands;bundle-version="0.10.1",
  org.eclipse.ui.workbench.texteditor;bundle-version="3.8.0",
- org.eclipse.jface.text;bundle-version="3.8.2"
+ org.eclipse.jface.text;bundle-version="3.8.2",
+ org.eclipse.core.resources
 Import-Package: org.osgi.framework
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
