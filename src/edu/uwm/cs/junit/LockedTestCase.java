@@ -295,6 +295,7 @@ public class LockedTestCase extends TestCase {
         while (m.find()) {
           String target = m.group(1);
           String keystring = m.group(2);
+          if (target.length() > 2) continue;
           int key = Integer.parseInt(keystring);
           String type = null;
           switch (target) {
