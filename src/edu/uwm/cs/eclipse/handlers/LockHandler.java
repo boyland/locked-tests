@@ -57,6 +57,8 @@ public class LockHandler extends MyHandler {
 			type = "Tc";
 		} else if (obj instanceof Float) {
 			type = "Tf";
+		} else if (obj instanceof Double) {
+			type = "Td";
 		}
 		int hash = Util.hash(obj);
 		String locked = type + "(" + hash + ")";

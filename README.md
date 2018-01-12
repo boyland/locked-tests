@@ -18,14 +18,14 @@ run is shown to the user with unlocked tests revealed to their actual value.  Th
 more help on input; the command-line interface uses a single way to read any run-time value.
 
 The following test case results can be encoded:
-- Primitive types: int, float, char and boolean
+- Primitive types: int, double, float, char and boolean
 - Predefined types: String
 - User-defined types: any class with a public static "fromString" method taking a string.
 
 The following classes in this project are intended to be used by clients (instructors):
 - edu.uwm.cs351.junit.LockedTestCase
    (replacement for junit.framework.TestCase from Junit 3)
-   The test suite may use methods T(...), Ts(...), Ti(...), Tb(...), Tc(...)
+   The test suite may use methods T(...), Ts(...), Ti(...), Tb(...), Tc(...) Td(...)
    to access locked test values given their hashes.
 - edu.uwm.cs351.junit.Util
    (main program that runs on the console/command-line for computing hashes)

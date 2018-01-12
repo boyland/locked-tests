@@ -187,6 +187,11 @@ public class LockedTestCase extends TestCase {
 	  return f.floatValue();
 	}
 	
+	protected double Td(int key) {
+		Double d = (Double)T(key,"Double","Td");
+		return d.doubleValue();
+	}
+	
 	private static BufferedReader input = null;
 	
 	private Object askUser(int key, String type, String target) {
@@ -305,6 +310,7 @@ public class LockedTestCase extends TestCase {
           case "Tb": type = "Boolean"; break;
           case "Tc": type = "Character"; break;
           case "Tf": type = "Float"; break;
+          case "Td": type = "Double"; break;
           }
           if (info.keys.containsKey(key)) {
             info.putReplace(target, key, info.keys.get(key));

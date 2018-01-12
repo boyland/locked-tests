@@ -3,7 +3,7 @@ Main-Class: edu/uwm/cs/junit/Util
 Bundle-ManifestVersion: 2
 Bundle-Name: locked-tests
 Bundle-SymbolicName: edu.uwm.cs.locked-tests;singleton:=true
-Bundle-Version: 0.4
+Bundle-Version: 0.5
 Export-Package: edu.uwm.cs,
  edu.uwm.cs.eclipse,
  edu.uwm.cs.junit
