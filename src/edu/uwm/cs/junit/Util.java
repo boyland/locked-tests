@@ -146,7 +146,8 @@ public class Util {
 		switch (s.charAt(0)) {
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 		  if (s.indexOf('.') == -1)
-		    return Integer.parseInt(s);
+			  if (s.startsWith("0x")) return Integer.parseInt(s.substring(2),16);
+			  else return Integer.parseInt(s);
 		  else if (s.endsWith("f"))
 		    return Float.parseFloat(s);
 		  else return Double.parseDouble(s);

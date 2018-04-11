@@ -157,7 +157,9 @@ public class TestCaseUnlockDialog extends JDialog {
 	public Object getObject() throws NumberFormatException, ParseException {
 		String s = valueField.getText();
 		if (type == null || type.equals("BUILT_IN")) return Util.parseObject(s);
-		else if (type.equals("Integer")) return new Integer(Integer.parseInt(s));
+		else if (type.equals("Integer")) 
+			if (s.startsWith("0x")) return new Integer(Integer.parseInt(s.substring(2),16));
+			else return new Integer(Integer.parseInt(s));
 		else if (type.equals("Float")) return new Float(Float.parseFloat(s));
 		else if (type.equals("Double")) return new Double(Double.parseDouble(s));
 		else if (type.equals("String")) return Util.unescape(s);
