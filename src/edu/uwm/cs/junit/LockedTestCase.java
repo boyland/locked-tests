@@ -11,6 +11,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -332,4 +338,35 @@ public class LockedTestCase extends TestCase {
       }
     }
   }
+  
+  static final Integer timeout = Integer.getInteger("org.junit.timeout");
+  final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+  private void doRunTest() throws Exception {
+	  try {
+		super.runTest();
+	} catch (Throwable e) {
+		throw new ExecutionException(e);
+	}
+  }
+  @Override
+  protected void runTest() throws Throwable {
+	  if (timeout == null) super.runTest();
+	  else {
+		  Future<Void> future = executor.submit((Callable<Void>)(() -> { doRunTest(); return null; }));
+		  try {
+			  future.get(timeout, TimeUnit.MILLISECONDS); //timeout is in 2 seconds
+		  } catch(ExecutionException e) {
+			  Throwable t = e;
+			  while (t instanceof ExecutionException) {
+				  t = ((ExecutionException)t).getCause();
+			  }
+			  throw t;
+		  } finally {
+			  executor.shutdownNow();	
+		  }
+		}
+  }
+
+
 }
