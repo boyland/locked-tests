@@ -283,13 +283,31 @@ public class LockedTestCase extends TestCase {
 		return Util.ERROR_OBJECT;
   }
   
+  public static class LockedException extends RuntimeException {
+	  /**
+	   * KEH
+	   */
+	  private static final long serialVersionUID = 1L;
+
+	  public LockedException(String s) {
+		  super(s);
+	  }
+  }
+  
   /**
    * Find all locked tests in the given class name (a locked JUnit test).
    * @param classname name of the class including locked tests.
+   * @throws LockedException if some case remains locked.
    */
   public static void unlockAll(String className) {
 	unlockAll(className,className);
   }
+  /**
+   * Find all locked tests in the given class name (a locked JUnit test).
+   * @param classname name of the class including locked tests.
+   * @param infoName name of the file that holds the keys
+   * @throws LockedException if some case remains locked.
+   */
   public static void unlockAll(String infoName, String className) {
 	Info info = getLockedTestInfo(infoName+".tst");
     String[] contents = Util.readSourceFile(className);
@@ -325,7 +343,7 @@ public class LockedTestCase extends TestCase {
             if (result != Util.ERROR_OBJECT && Util.checkHash(key, result)) {
               info.put(target, key, result);
             } else {
-              return;
+              throw new LockedException("test on line " + i + " of " + className + ".java not unlocked");
             }
           }
         }

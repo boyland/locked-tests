@@ -1,7 +1,7 @@
 # This makefile can build JAR files for command line use
 # or for Eclipse plugin use.
 
-VERSION=0.6
+VERSION=0.7
 .PHONY: build build-plugin test default unit-test regression-test
 
 default: test
