@@ -39,44 +39,19 @@ public interface Command<T> {
 		}
 	}
 	
-	static abstract class Builder<R,S,T> {
-		protected final Class<R> refClass;
-		protected final Class<S> sutClass;
-		protected final LiteralBuilder literals;
-				
-		protected S getSUT(R ref) {
-			if (ref == null) return null;
-			S sut = sutClass.cast(literals.getTestObject(literals.toString(ref)));
-			if (sut == null) throw new NullPointerException("couldn't find SUT for " + ref + " of type " + ref.getClass() + " named " + literals.toString(ref));
-			return sut;
-		}
-		
-		@SuppressWarnings("unchecked")
-		protected <U> U getTest(U ref) {
-			if (literals.isMutableObject(ref)) {
-				return (U) literals.getTestObject(literals.toString(ref));
-			}
-			return ref;
-		}
+	public static class NewCommand<R,S> implements Command<Union<R,S>> {
+		private final TestClass<R,S> testClass;
+		private final Supplier<R> rConstr;
+		private final Supplier<S> sConstr;
 
-		protected Builder(LiteralBuilder lb, Class<R> rClass, Class<S> sClass) {
-			literals = lb;
-			refClass = rClass;
-			sutClass = sClass;
+		public NewCommand(TestClass<R,S> tc) {
+			this(tc, () -> makeInstance(tc.getRefClass()), () -> makeInstance(tc.getSUTClass()));
 		}
 		
-		protected Command<T> build(Supplier<Result<T>> refs, Supplier<Result<T>> suts, String c) {
-			return new Default<>(refs,suts,c);
-		}
-	}
-	
-	public static class NewInstance<R,S> extends Builder<R,S,Union<R,S>> implements Command<Union<R,S>> {
-
-		private final String sutName;
-		
-		protected NewInstance(LiteralBuilder lb, Class<R> rClass, Class<S> sClass, String sutName) {
-			super(lb, rClass, sClass);
-			this.sutName = sutName;
+		public NewCommand(TestClass<R,S> tc, Supplier<R> rc, Supplier<S> sc) {
+			testClass = tc;
+			rConstr = rc;
+			sConstr = sc;
 		}
 		
 		private static <T> T makeInstance(Class<T> clazz) {
@@ -91,13 +66,11 @@ public interface Command<T> {
 		@Override
 		public Result<Union<R, S>> execute(boolean asReference) {
 			try {
-				Union<R,S> result;
 				if (asReference) {
-					result = Union.makeR(makeInstance(refClass));
+					return new ObjectResult<>(testClass,rConstr.get());
 				} else {
-					result = Union.makeS(makeInstance(sutClass));
+					return new ObjectResult<>(sConstr.get(),testClass);
 				}
-				return new NormalResult<>(result);
 			} catch (Exception e) {
 				return new ExceptionResult<>(e);
 			}
@@ -105,218 +78,211 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return "new " + sutName + "()";
-		}	
+			return "new " + testClass.getTypeName() + "()";
+		}
 	}
-	
-	public static class NewInstance1<R,S,T,U> extends Builder<R,S,T> implements Function<U,Command<T>> {
-		protected final Function<U,Result<T>> constructor;
-		protected final String typeName;
+
+	public static class NewCommand1<R,S,U> implements Command<Union<R,S>> {
+		private final TestClass<R,S> testClass;
+		private final U arg;
+		private final Function<U,R> rConstr;
+		private final Function<U,S> sConstr;
+
+		public NewCommand1(TestClass<R,S> tc, U a, Function<U,R> rc, Function<U,S> sc) {
+			testClass = tc;
+			arg = a;
+			rConstr = rc;
+			sConstr = sc;
+		}
 		
-		public NewInstance1(LiteralBuilder lb, Class<R> rClass, Class<S> sClass, Function<U,Result<T>> cons, String typeName) {
-			super(lb,rClass,sClass);
-			constructor = cons;
-			this.typeName = typeName;
+		@Override
+		public Result<Union<R, S>> execute(boolean asReference) {
+			try {
+				if (asReference) {
+					return new ObjectResult<>(testClass,rConstr.apply(arg));
+				} else {
+					return new ObjectResult<>(sConstr.apply(arg),testClass);
+				}
+			} catch (Exception e) {
+				return new ExceptionResult<>(e);
+			}
 		}
 
 		@Override
-		public Command<T> apply(U rarg) {
-			U sarg = getTest(rarg);
-			return build(
-					() -> constructor.apply(rarg),
-					() -> constructor.apply(sarg),
-					"new " + typeName + "(" + literals.toString(rarg) + ")");
-		}		
+		public String code(LiteralBuilder lb) {
+			return "new " + testClass.getTypeName() + "(" + lb.toString(arg) + ")";
+		}
 	}
-	
-	public static class NewInstance2<R,S,T,U,V> extends Builder<R,S,T> implements BiFunction<U,V,Command<T>> {
-		protected final BiFunction<U,V,Result<T>> constructor;
-		protected final String typeName;
+
+	public static class NewCommand2<R,S,U,V> implements Command<Union<R,S>> {
+		private final TestClass<R,S> testClass;
+		private final U arg1;
+		private final V arg2;
+		private final BiFunction<U,V,R> rConstr;
+		private final BiFunction<U,V,S> sConstr;
+
+		public NewCommand2(TestClass<R,S> tc, U a, V b, BiFunction<U,V,R> rc, BiFunction<U,V,S> sc) {
+			testClass = tc;
+			arg1 = a;
+			arg2 = b;
+			rConstr = rc;
+			sConstr = sc;
+		}
 		
-		public NewInstance2(LiteralBuilder lb, Class<R> rClass, Class<S> sClass, BiFunction<U,V,Result<T>> cons, String typeName) {
-			super(lb,rClass,sClass);
-			constructor = cons;
-			this.typeName = typeName;
+		@Override
+		public Result<Union<R, S>> execute(boolean asReference) {
+			try {
+				if (asReference) {
+					return new ObjectResult<>(testClass,rConstr.apply(arg1,arg2));
+				} else {
+					return new ObjectResult<>(sConstr.apply(arg1,arg2),testClass);
+				}
+			} catch (Exception e) {
+				return new ExceptionResult<>(e);
+			}
 		}
 
 		@Override
-		public Command<T> apply(U rarg1, V rarg2) {
-			U sarg1 = getTest(rarg1);
-			V sarg2 = getTest(rarg2);
-			return build(
-					() -> constructor.apply(rarg1, rarg2),
-					() -> constructor.apply(sarg1, sarg2),
-					"new " + typeName + "(" + literals.toString(rarg1) + "," + literals.toString(rarg2) + ")");
-		}		
+		public String code(LiteralBuilder lb) {
+			return "new " + testClass.getTypeName() + "(" + 
+					lb.toString(arg1) + "," + lb.toString(arg2) + ")";
+		}
 	}
-	
-	public static class Builder0<R,S,T> extends Builder<R,S,T> implements Function<R,Command<T>> {
+
+	public static class Command0<R,S,T> implements Command<T> {
+		private final TestClass<R,S> testClass;
+		private final int index;
 		protected final Function<R,Result<T>> refFunc;
 		protected final Function<S,Result<T>> sutFunc;
 		protected final String methodName;
 		
-		protected Builder0(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-				Function<R,Result<T>> rfunc, Function<S,Result<T>> sfunc, String mname) {
-			super(lb,rClass,sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
+		public Command0(TestClass<R,S> tc, int i, Function<R,Result<T>> rf, Function<S,Result<T>> sf, String mn) {
+			testClass = tc;
+			index = i;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
 		}
 
 		@Override
-		public Command<T> apply(R ref) {
-			S sut = getSUT(ref);
-			return build(() -> refFunc.apply(ref),
-					     () -> sutFunc.apply(sut), 
-					     literals.toString(ref) + "." + methodName + "()");
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(testClass.getRefObject(index));
+			} else {
+				return sutFunc.apply(testClass.getSUTObject(index));
+			}
 		}
+
+		@Override
+		public String code(LiteralBuilder lb) {
+			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "()";
+		}		
 	}
-	
-	public static class Builder1<R,S,T,U> extends Builder<R,S,T> implements BiFunction<R,U,Command<T>> {
+
+	public static class Command1<R,S,T,U> implements Command<T> {
+		private final TestClass<R,S> testClass;
+		private final int index;
+		private final U arg;
 		protected final BiFunction<R,U,Result<T>> refFunc;
 		protected final BiFunction<S,U,Result<T>> sutFunc;
 		protected final String methodName;
-
-		protected Builder1(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			BiFunction<R,U,Result<T>> rfunc, BiFunction<S,U,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
+		
+		public Command1(TestClass<R,S> tc, int i, U a, BiFunction<R,U,Result<T>> rf, BiFunction<S,U,Result<T>> sf, String mn) {
+			testClass = tc;
+			index = i;
+			arg = a;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
 		}
 
 		@Override
-		public Command<T> apply(R ref, U rarg) {
-			S sut = getSUT(ref);
-			U sarg = getTest(rarg);
-			return build(() -> refFunc.apply(ref,rarg),
-					     () -> sutFunc.apply(sut,sarg), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(rarg) + ")");
-		}
-		
-	}
-	
-	public static class BuilderR<R,S,T> extends Builder<R,S,T> implements BiFunction<R,R,Command<T>> {
-		protected final BiFunction<R,R,Result<T>> refFunc;
-		protected final BiFunction<S,S,Result<T>> sutFunc;
-		protected final String methodName;
-
-		protected BuilderR(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			BiFunction<R,R,Result<T>> rfunc, BiFunction<S,S,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(testClass.getRefObject(index),arg);
+			} else {
+				return sutFunc.apply(testClass.getSUTObject(index),arg);
+			}
 		}
 
 		@Override
-		public Command<T> apply(R ref, R ref1) {
-			S sut = getSUT(ref);
-			S sut1 = getSUT(ref1);
-			return build(() -> refFunc.apply(ref,ref1),
-					     () -> sutFunc.apply(sut,sut1), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(ref1) + ")");
-		}
-		
+		public String code(LiteralBuilder lb) {
+			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + lb.toString(arg) + ")";
+		}		
 	}
 
-	public static class Builder2<R,S,T,U,V> extends Builder<R,S,T> implements TriFunction<R,U,V,Command<T>> {
+	public static class Command2<R,S,T,U,V> implements Command<T> {
+		private final TestClass<R,S> testClass;
+		private final int index;
+		private final U arg1;
+		private final V arg2;
 		protected final TriFunction<R,U,V,Result<T>> refFunc;
 		protected final TriFunction<S,U,V,Result<T>> sutFunc;
 		protected final String methodName;
-
-		protected Builder2(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			TriFunction<R,U,V,Result<T>> rfunc, TriFunction<S,U,V,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
+		
+		public Command2(TestClass<R,S> tc, int i, U a, V b, TriFunction<R,U,V,Result<T>> rf, TriFunction<S,U,V,Result<T>> sf, String mn) {
+			testClass = tc;
+			index = i;
+			arg1 = a;
+			arg2 = b;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
 		}
 
 		@Override
-		public Command<T> apply(R ref, U rarg1, V rarg2) {
-			S sut = getSUT(ref);
-			U sarg1 = getTest(rarg1);
-			V sarg2 = getTest(rarg2);
-			return build(() -> refFunc.apply(ref,rarg1,rarg2),
-					     () -> sutFunc.apply(sut,sarg1,sarg2), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(rarg1) + "," + literals.toString(rarg2) + ")");
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(testClass.getRefObject(index),arg1,arg2);
+			} else {
+				return sutFunc.apply(testClass.getSUTObject(index),arg1,arg2);
+			}
 		}
+
+		@Override
+		public String code(LiteralBuilder lb) {
+			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + lb.toString(arg1) + "," + lb.toString(arg2) + ")";
+		}		
+	}
+
+	public static class CommandM<R,S,T,U,V> implements Command<T> {
+		protected final TestClass<R,S> recClass;
+		protected final TestClass<U,V> argClass;
+		protected final int recIndex;
+		protected final int argIndex;
+		protected final BiFunction<R,U,Result<T>> refFunc;
+		protected final BiFunction<S,V,Result<T>> sutFunc;
+		protected final String methodName;
 		
+		public CommandM(TestClass<R,S> rc, TestClass<U,V> ac, int i, int j, BiFunction<R,U,Result<T>> rf, BiFunction<S,V,Result<T>> sf, String mn) {
+			recClass = rc;
+			argClass = ac;
+			recIndex = i;
+			argIndex = j;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
+		}
+
+		@Override
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(recClass.getRefObject(recIndex),argClass.getRefObject(argIndex));
+			} else {
+				return sutFunc.apply(recClass.getSUTObject(recIndex),argClass.getSUTObject(argIndex));
+			}
+		}
+
+		@Override
+		public String code(LiteralBuilder lb) {
+			return lb.toString(recClass.getRefObject(recIndex)) + "." + methodName + "(" + lb.toString(argClass.getRefObject(argIndex)) + ")";
+		}		
 	}
 	
-	public static class BuilderR1<R,S,T,V> extends Builder<R,S,T> implements TriFunction<R,R,V,Command<T>> {
-		protected final TriFunction<R,R,V,Result<T>> refFunc;
-		protected final TriFunction<S,S,V,Result<T>> sutFunc;
-		protected final String methodName;
-
-		protected BuilderR1(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			TriFunction<R,R,V,Result<T>> rfunc, TriFunction<S,S,V,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
+	public static class CommandR<R,S,T> extends CommandM<R,S,T,R,S> {
+		public CommandR(TestClass<R,S> tc, int i, int j, BiFunction<R,R,Result<T>> rf, BiFunction<S,S,Result<T>> sf, String mn) {
+			super(tc,tc,i,j,rf,sf,mn);
 		}
-
-		@Override
-		public Command<T> apply(R ref, R ref1, V rarg2) {
-			S sut = getSUT(ref);
-			S sut1 = getSUT(ref1);
-			V sarg2 = getTest(rarg2);
-			return build(() -> refFunc.apply(ref,ref1,rarg2),
-					     () -> sutFunc.apply(sut,sut1,sarg2), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(ref1) + "," + literals.toString(rarg2) + ")");
-		}
-		
 	}
 
-	public static class Builder1R<R,S,T,U> extends Builder<R,S,T> implements TriFunction<R,U,R,Command<T>> {
-		protected final TriFunction<R,U,R,Result<T>> refFunc;
-		protected final TriFunction<S,U,S,Result<T>> sutFunc;
-		protected final String methodName;
-
-		protected Builder1R(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			TriFunction<R,U,R,Result<T>> rfunc, TriFunction<S,U,S,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
-		}
-
-		@Override
-		public Command<T> apply(R ref, U rarg1, R ref2) {
-			S sut = getSUT(ref);
-			U sarg1 = getTest(rarg1);
-			S sut2 = getSUT(ref2);
-			return build(() -> refFunc.apply(ref,rarg1,ref2),
-					     () -> sutFunc.apply(sut,sarg1,sut2), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(rarg1) + "," + literals.toString(ref2) + ")");
-		}
-		
-	}
-
-	public static class BuilderRR<R,S,T> extends Builder<R,S,T> implements TriFunction<R,R,R,Command<T>> {
-		protected final TriFunction<R,R,R,Result<T>> refFunc;
-		protected final TriFunction<S,S,S,Result<T>> sutFunc;
-		protected final String methodName;
-
-		protected BuilderRR(LiteralBuilder lb, Class<R> rClass, Class<S> sClass,
-			TriFunction<R,R,R,Result<T>> rfunc, TriFunction<S,S,S,Result<T>> sfunc, String mname) {
-			super(lb, rClass, sClass);
-			refFunc = rfunc;
-			sutFunc = sfunc;
-			methodName = mname;
-		}
-
-		@Override
-		public Command<T> apply(R ref, R ref1, R ref2) {
-			S sut = getSUT(ref);
-			S sut1 = getSUT(ref1);
-			S sut2 = getSUT(ref2);
-			return build(() -> refFunc.apply(ref,ref1,ref2),
-					     () -> sutFunc.apply(sut,sut1,sut2), 
-					     literals.toString(ref) + "." + methodName + "(" + literals.toString(ref1) + "," + literals.toString(ref2) + ")");
-		}
-		
-	}
 }

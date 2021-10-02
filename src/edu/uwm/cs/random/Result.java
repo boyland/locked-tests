@@ -28,8 +28,7 @@ public interface Result<T> {
 	 * As a side-effect of this operation, the expected 
 	 * value may remove other possibilities.
 	 * @param other (typically the expected Result)
-	 * @param lb Builder to use to detect whether results are mutable.
 	 * @return true if the object matches.
 	 */
-	public boolean includes(Result<T> other, LiteralBuilder lb);
+	public boolean includes(Result<T> other);
 }

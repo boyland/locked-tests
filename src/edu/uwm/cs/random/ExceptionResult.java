@@ -24,7 +24,7 @@ public class ExceptionResult<T> implements Result<T> {
 	}
 
 	@Override
-	public boolean includes(Result<T> x, LiteralBuilder lb) {
+	public boolean includes(Result<T> x) {
 		if (!(x instanceof ExceptionResult<?>)) return false;
 		if (reason == null) return true;
 		ExceptionResult<T> other = (ExceptionResult<T>) x;

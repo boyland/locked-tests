@@ -8,8 +8,7 @@ package edu.uwm.cs.random;
  */
 public class NormalResult<T> implements Result<T> {
 
-	private T value;
-	private boolean newMutableResult = false;
+	protected final T value;
 	
 	/**
 	 * A normal result that returns a value
@@ -25,21 +24,11 @@ public class NormalResult<T> implements Result<T> {
 	}
 	
 	@Override
-	public boolean includes(Result<T> x, LiteralBuilder lb) {
+	public boolean includes(Result<T> x) {
 		if (!(x instanceof NormalResult<?>)) return false;
 		NormalResult<?> other = (NormalResult<?>)x;
 		if (value == null) return other.value == null;
 		if (other.value == null) return false;
-		if (lb.isMutableObject(value)) {
-			String name = lb.toString(value);
-			if (name == null) {
-				newMutableResult = true;
-				lb.registerMutableObject(value, other.value);
-				return true;
-			} else {
-				return other.value == lb.getTestObject(name);
-			}
-		}
 		return value.equals(other.value);
 	}
 
@@ -47,13 +36,9 @@ public class NormalResult<T> implements Result<T> {
 	public String genAssert(LiteralBuilder lb, String code) {
 		if (value == null) {
 			return "assertNull(" + code + ");";
-		} else if (newMutableResult) {
-			String name = lb.toString(value);
-			return lb.toTypeString(value) + " " + name + " = " + code + ";";
-		} else if (lb.isMutableObject(value)) {
-			return "assertSame(" + lb.toString(value) + "," + code + ");";
+		} else {
+			return "assertEquals(" + lb.toString(value) + "," + code + ");";
 		}
-		return "assertEquals(" + lb.toString(value) + "," + code + ");";
 	}
 	
 	private static final NormalResult<?> nullResult = new NormalResult<Object>(null);

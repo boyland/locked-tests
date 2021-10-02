@@ -10,6 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import edu.uwm.cs.util.TriConsumer;
 import edu.uwm.cs.util.TriFunction;
@@ -68,34 +69,90 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	protected final Class<R> refClass;
 	protected final Class<S> sutClass;
 	
-	class RegisteredClass {
-		Class<?> clazz;
+	private Map<Object,String> registry = new HashMap<>();
+	private Map<String,Object> testObjects = new HashMap<>();
+	private Map<Object,Integer> registeredIndex = new HashMap<>();
+
+	public class RegisteredClass<T,U> implements TestClass<T,U> {
+		Class<T> refClass;
+		Class<U> sutClass;
 		String prefix;
 		String typeName;
-		List<Object> objects; // reference objects
-		RegisteredClass(Class <?> c, String p, String t) {
-			clazz = c;
+		List<T> refs; // reference objects
+		List<U> tests;
+		
+		RegisteredClass(Class <T> rc, Class<U> sc, String p, String t) {
+			refClass = rc;
+			sutClass = sc;
 			prefix = p;
 			typeName = t;
-			objects = new ArrayList<>();
+			refs = new ArrayList<>();
+			tests = new ArrayList<>();
+		}
+		
+		@Override
+		public Class<T> getRefClass() {
+			return refClass;
+		}
+
+		@Override
+		public Class<U> getSUTClass() {
+			return sutClass;
+		}
+
+		@Override
+		public String getTypeName() {
+			return typeName;
+		}
+
+		@Override
+		public int indexOf(T ref) {
+			return registeredIndex.getOrDefault(ref, -1);
+		}
+
+		@Override
+		public T getRefObject(int i) {
+			if (i < 0) return null;
+			return refs.get(i);
+		}
+
+		@Override
+		public U getSUTObject(int i) {
+			if (i < 0) return null;
+			return tests.get(i);
+		}
+
+		@Override
+		public void clear() {
+			refs.clear();
+			tests.clear();
+		}
+		
+		@Override
+		public int size() {
+			return refs.size();
+		}
+		
+		@Override
+		public void register(T ref, U test) {
+			int i=size();
+			// String name = prefix + i;
+			refs.add(ref);
+			tests.add(test);
+			//registry.put(ref, name);
+			//testObjects.put(name, test);
+			registeredIndex.put(ref, i);
+		}
+		
+		public void register(Union<T,U> u1, Union<T,U> u2) {
+			register(u1.getR(),u2.getS());
 		}
 	}
 	
-	private List<RegisteredClass> registeredClasses = new ArrayList<>();
-	private Map<Object,String> registry = new HashMap<>();
-	private Map<String,Object> testObjects = new HashMap<>();
+	protected final RegisteredClass<R,S> mainClass;
+	
+	private List<RegisteredClass<?,?>> registeredClasses = new ArrayList<>();
 		
-	@Override
-	public boolean isMutableObject(Object x) {
-		if (x instanceof Union<?,?>) return true;
-		String name = registry.get(x);
-		if (name != null) return true;
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.isInstance(x)) return true;
-		}
-		return false;
-	}
-
 	/** Return a string for the object.  
 	 * This implementation handles null, a Number, String or Character.
 	 * Otherwise if the object is in the registry, return registered name.
@@ -111,66 +168,32 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		if (x == null || x instanceof String || x instanceof Character || x instanceof Number) return edu.uwm.cs.junit.Util.toString(x);
 		String name = registry.get(x);
 		if (name != null) return name;
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.isInstance(x)) return null;
+		Integer index = registeredIndex.get(x);
+		if (index != null) {
+			for (RegisteredClass<?,?> rc : registeredClasses) {
+				if (rc.getRefClass().isInstance(x)) {
+					name = rc.prefix + index;
+					registry.put(x, name);
+					return name;
+				}
+			}
 		}
 		return x.toString();
 	}
 
 	/**
-	 * Return a string naming the type of this object.
-	 * The implementation returns the canonical type name of the class of the object.
-	 * Generic types lead to raw types.
-	 * @see edu.uwm.cs.random.LiteralBuilder#toTypeString(java.lang.Object)
-	 */
-	@Override
-	public String toTypeString(Object x) {
-		if (x instanceof Union<?,?>) {
-			x = ((Union<?,?>)x).get();
-		}
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.isInstance(x)) return rc.typeName;
-		}
-		return x.getClass().getCanonicalName().replace('/', '.');
-	}
-
-	@Override
-	public String registerMutableObject(Object ref, Object test) {
-		if (ref instanceof Union<?,?>) {
-			ref = ((Union<?,?>)ref).get();
-		}
-		if (test instanceof Union<?,?>) {
-			test = ((Union<?,?>)test).get();
-		}
-		if (ref == null || test == null) throw new NullPointerException("cannot register null");
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.isInstance(ref)) {
-				String prefix = rc.prefix;
-				String result = prefix + registry.size();
-				registry.put(ref, result);
-				rc.objects.add(ref);
-				testObjects.put(result, test);
-				return result;
-			}
-		}
-		throw new IllegalArgumentException("No registered class for " + ref);
-	}
-	
-	/**
 	 * Register a class of mutable objects.
-	 * @param clazz class of mutable objects from the reference implementation.
-	 * @param prefix short  string used to name mutable objects, if null, use first letter of class name.
+	 * @param refClass class of mutable objects from the reference implementation.
+	 * @param sutClass class of mutable objects from the SUT
 	 * @param typeName string used to type the SUT implementation, if null, use reference class canonical name.
+	 * @param prefix short  string used to name mutable objects, if null, use first letter of class name.
 	 */
-	protected void registerMutableClass(Class<?> clazz, String typeName, String prefix) {
-		if (typeName == null) typeName = clazz.getCanonicalName().replace('/', '.');
-		if (prefix == null) prefix = ""+Character.toLowerCase(clazz.getSimpleName().charAt(0));
-		registeredClasses.add(new RegisteredClass(clazz, prefix, typeName));
-	}
-
-	@Override
-	public Object getTestObject(String registeredName) {
-		return testObjects.get(registeredName);
+	protected <T,U> RegisteredClass<T,U> registerMutableClass(Class<T> refClass, Class<U> sutClass, String typeName, String prefix) {
+		if (typeName == null) typeName = refClass.getCanonicalName().replace('/', '.');
+		if (prefix == null) prefix = ""+Character.toLowerCase(refClass.getSimpleName().charAt(0));
+		AbstractRandomTest<R, S>.RegisteredClass<T, U> result = new RegisteredClass<T,U>(refClass, sutClass, prefix, typeName);
+		registeredClasses.add(result);
+		return result;
 	}
 
 	public static final int DEFAULT_TIMEOUT = 1000; // milliseconds
@@ -178,6 +201,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	protected final int maxTests;
 	protected final int maxTestSize;
 	protected final int timeout = DEFAULT_TIMEOUT;
+	private Random random = new Random();
 	
 	/**
 	 * Create a random testing situation.
@@ -194,27 +218,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		sutClass = sClass;
 		maxTests = total;
 		maxTestSize = testSize;
-		registerMutableClass(rClass, typename, prefix);
-	}
-	
-	private List<String> tests = new ArrayList<>();
-	private Random random = new Random();
-	
-	/**
-	 * Return a previously created (reference) mutable object
-	 * @param clazz registered class of object
-	 * @return random previously created object of this class, or null
-	 * if none have been created yet.
-	 */
-	protected <T> T getReferenceObject(Class<T> clazz) {
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.equals(clazz)) {
-				int n = rc.objects.size();
-				if (n == 0) return null;
-				return clazz.cast(rc.objects.get(random.nextInt(n)));
-			}
-		}
-		throw new IllegalArgumentException("Class not registered: " + clazz);
+		mainClass = registerMutableClass(rClass, sClass, typename, prefix);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -280,74 +284,213 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			}
 		};
 	}
+	
+	protected <A,T> Function<A,Result<Union<T,T>>> lift(TestClass<T,T> desc, Function<A,T> func) {
+		return (a) -> {
+			try {
+				return ObjectResult.create(desc, func.apply(a));
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
+	protected <A,B,T> BiFunction<A,B,Result<Union<T,T>>> lift(TestClass<T,T> desc, BiFunction<A,B,T> func) {
+		return (a,b) -> {
+			try {
+				return ObjectResult.create(desc, func.apply(a,b));
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
+	protected <A,B,C,T> TriFunction<A,B,C,Result<Union<T,T>>> lift(TestClass<T,T> desc, TriFunction<A,B,C,T> func) {
+		return (a,b,c) -> {
+			try {
+				return ObjectResult.create(desc, func.apply(a,b,c));
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
 
 	protected Command<Union<R,S>> newCommand() {
-		String sutName = null;
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.equals(refClass)) sutName = rc.typeName;
-		}
-		assert sutName != null;
-		return new Command.NewInstance<>(this, refClass, sutClass, sutName);
+		return newCommand(mainClass);
 	}
 	
-	protected static <T> Result<T> newInstance(Class<T> clazz) {
-		try {
-			return new NormalResult<>(clazz.newInstance());
-		} catch (Exception|Error ex) {
-			System.out.println("Cannot instantiate " + clazz);
-			ex.printStackTrace();
-			return new ExceptionResult<>(ex);
-		}
+	protected <U,V> Command<Union<U,V>> newCommand(TestClass<U,V> desc) {
+		return new Command.NewCommand<>(desc);
 	}
 	
-	protected <T> Command<T> newCommand(Class<T> clazz) {
-		String sutName = null;
-		for (RegisteredClass rc : registeredClasses) {
-			if (rc.clazz.equals(refClass)) sutName = rc.typeName;
-		}
-		assert sutName != null;
-		return new Command.Default<>(
-				() -> newInstance(clazz), 
-				() -> newInstance(clazz), 
-				"new " + sutName + "()");
+	/**
+	 * Construct a command that creates an object on which we
+	 * can do further tests.  The result type must be registered.
+	 * @param desc description of the registered type
+	 * @param supplier constructor with no parameters
+	 * @return command to create an instance that will be registered for further method calls.
+	 */
+	protected <T> Command<?> create(TestClass<T,T> desc, Supplier<T> supplier) {
+		return new Command.NewCommand<>(desc,supplier,supplier);
+	}	
+	
+	/**
+	 * Construct a command that creates an object on which we
+	 * can do further tests.  The result type must be registered.
+	 * @param desc description of the registered type
+	 * @param func constructor with one pure parameter
+	 * @return command to create an instance that will be registered
+	 */
+	protected <T,A> Function<A,Command<?>> create(TestClass<T,T> desc, Function<A,T> func) {
+		return (a) -> new Command.NewCommand1<>(desc, a, func, func);
+	}
+		
+	/**
+	 * Construct a command that creates an object on which we
+	 * can do further tests.  The result type must be registered.
+	 * @param desc description of the registered type
+	 * @param func constructor with two pure parameters
+	 * @return command to create an instance that will be registered
+	 */
+	protected <T,A,B> BiFunction<A,B,Command<?>> create(TestClass<T,T> desc, BiFunction<A,B,T> func) {
+		return (a,b) -> new Command.NewCommand2<>(desc, a, b, func, func);
 	}
 	
-	protected <A,T> Function<A, Command<T>> new_(Function<A,Result<T>> cons, String typeName) {
-		return new Command.NewInstance1<>(this, refClass, sutClass, cons, typeName);
+	/**
+	 * Construct a command builder for a method that is run on the main class.  If the result is
+	 * an object result, the lifting needs to take the test class description.
+	 * @param rfunc lifted method in reference implementation
+	 * @param sfunc lifted method in SUT implementation
+	 * @param mname name of method (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <T> Function<Integer,Command<?>> build(Function<R,Result<T>> rfunc, Function <S,Result<T>> sfunc, String mname) {
+		return build(mainClass,rfunc,sfunc,mname);
 	}
-	protected <A,B,T> BiFunction<A, B, Command<T>> new__(BiFunction<A,B,Result<T>> cons, String typeName) {
-		return new Command.NewInstance2<>(this, refClass, sutClass, cons, typeName);
+
+	/**
+	 * Construct a command builder for a method that is run on some object class.  If the result is
+	 * an object result, the lifting needs to take the test class description.
+	 * @param desc description of the type of the object
+	 * @param rfunc lifted method in reference implementation
+	 * @param sfunc lifted method in SUT implementation
+	 * @param mname name of method (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <T,U,V> Function<Integer,Command<?>> build(TestClass<U,V> desc, Function<U,Result<T>> rfunc, Function <V,Result<T>> sfunc, String mname) {
+		return (i) -> new Command.Command0<>(desc,i,rfunc,sfunc,mname);
+	}
+
+	/**
+	 * Construct a command builder for a method that is run on some object class.  If the result is
+	 * an object result, the lifting needs to take the test class description.
+	 * @param desc description of the type of the object (same for ref and SUT)
+	 * @param rfunc lifted method
+	 * @param mname name of method (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <T,U> Function<Integer,Command<?>> build(TestClass<U,U> desc, Function<U,Result<T>> rfunc, String mname) {
+		return build(desc,rfunc,rfunc,mname);
 	}
 	
-	protected <A,T> Function<A, Command<T>> build(Class<A> clazz, Function<A,Result<T>> func, String mname) {
-		return new Command.Builder0<>(this, clazz, clazz, func, func, mname);
-	}
-	protected <T> Function<R, Command<T>> build(Function<R,Result<T>> rfunc, Function<S,Result<T>> sfunc, String mname) {
-		return new Command.Builder0<>(this, refClass, sutClass, rfunc, sfunc, mname);
-	}
-	protected <T,U> BiFunction<R, U, Command<T>> build_(BiFunction<R,U,Result<T>> rfunc, BiFunction<S,U,Result<T>> sfunc, String mname) {
-		return new Command.Builder1<>(this, refClass, sutClass, rfunc, sfunc, mname);		
-	}
-	protected <T> BiFunction<R, R, Command<T>> buildR(BiFunction<R,R,Result<T>> rfunc, BiFunction<S,S,Result<T>> sfunc, String mname) {
-		return new Command.BuilderR<>(this, refClass, sutClass, rfunc, sfunc, mname);		
-	}
-	protected <T,U,V> TriFunction<R, U, V, Command<T>> build__(TriFunction<R,U,V,Result<T>> rfunc, TriFunction<S,U,V,Result<T>> sfunc, String mname) {
-		return new Command.Builder2<>(this, refClass, sutClass, rfunc, sfunc, mname);		
-	}
-	protected <T,U> TriFunction<R, U, R, Command<T>> build_R(TriFunction<R,U,R,Result<T>> rfunc, TriFunction<S,U,S,Result<T>> sfunc, String mname) {
-		return new Command.Builder1R<>(this, refClass, sutClass, rfunc, sfunc, mname);		
-	}
-	protected <T,V> TriFunction<R, R, V, Command<T>> buildR_(TriFunction<R,R,V,Result<T>> rfunc, TriFunction<S,S,V,Result<T>> sfunc, String mname) {
-		return new Command.BuilderR1<>(this, refClass, sutClass, rfunc, sfunc, mname);		
-	}
-	protected <T> TriFunction<R, R, R, Command<T>> buildRR(TriFunction<R,R,R,Result<T>> rfunc, TriFunction<S,S,S,Result<T>> sfunc, String mname) {
-		return new Command.BuilderRR<>(this, refClass, sutClass, rfunc, sfunc, mname);		
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes a pure parameter.
+	 * @param desc description of object running method
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,T> BiFunction<Integer,A,Command<?>> build(BiFunction<R,A,Result<T>> rfunc, BiFunction<S,A,Result<T>> sfunc, String mname) {
+		return build(mainClass, rfunc, sfunc, mname);
 	}
 	
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes a pure parameter.
+	 * @param desc description of object running method
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,T,U,V> BiFunction<Integer,A,Command<?>> build(TestClass<U,V> desc, BiFunction<U,A,Result<T>> rfunc, BiFunction<V,A,Result<T>> sfunc, String mname) {
+		return (i,a) -> new Command.Command1<>(desc, i, a, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes a pure parameter.
+	 * @param desc description of object running method
+	 * @param rfunc lifted implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,T,U> BiFunction<Integer,A,Command<?>> build(TestClass<U,U> desc, BiFunction<U,A,Result<T>> rfunc, String mname) {
+		return build(desc, rfunc, rfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on the main object
+	 * that takes an object parameter.
+	 * @param argDesc description of the parameter object
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,T> BiFunction<Integer,Integer,Command<?>> build(BiFunction<R,A,Result<T>> rfunc, BiFunction<S,B,Result<T>> sfunc, TestClass<A,B> argDesc, String mname) {
+		return build(mainClass, argDesc, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes an object parameter.
+	 * @param desc description of object running method
+	 * @param argDesc description of the parameter object
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,T,U,V> BiFunction<Integer,Integer,Command<?>> build(TestClass<U,V> desc, TestClass<A,B> argDesc, BiFunction<U,A,Result<T>> rfunc, BiFunction<V,B,Result<T>> sfunc, String mname) {
+		return (i,j) -> new Command.CommandM<>(desc, argDesc, i, j, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes an object parameter.
+	 * @param desc description of object running method
+	 * @param argDesc description of the parameter object
+	 * @param func lifted implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,T,U> BiFunction<Integer,Integer,Command<?>> build(TestClass<U,U> desc, TestClass<A,A> argDesc, BiFunction<U,A,Result<T>> func, String mname) {
+		return build(desc, argDesc, func, func, mname);
+	}	
 	
 	static enum TestState {
 		REFERENCE, SUT, FRAMEWORK;
 	}
+	private List<Supplier<String>> tests = new ArrayList<>();	
 	private TestState currentState;
 	private Command<?> currentCommand;
 	private TimeoutExecutor timer = new TimeoutExecutor(() -> doTimeout(), timeout);
@@ -363,9 +506,10 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * Start a new test with all new objects.
 	 */
 	public void clear() {
-		for (RegisteredClass rc : registeredClasses) {
-			rc.objects.clear();
+		for (RegisteredClass<?,?> rc : registeredClasses) {
+			rc.clear();
 		}
+		registeredIndex.clear();
 		registry.clear();
 		testObjects.clear();
 		tests.clear();
@@ -381,12 +525,8 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		Result<T> actual = command.execute(false);
 		if (!timer.defer(timeout)) return false;
 		currentState = TestState.FRAMEWORK;
-		boolean result = expected.includes(actual, this);
-		String extra = "";
-		if (result == false) {
-			extra = " // got " + actual.toString();
-		}
-		tests.add(expected.genAssert(this, command.code(this)) + extra);
+		boolean result = expected.includes(actual);
+		tests.add(() -> expected.genAssert(this, command.code(this)));
 		return result;
 	}
 	
@@ -417,7 +557,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			System.out.println("//! Timeout in reference implementation.  Please submit this test to instructor.");
 			// fall through
 		case SUT:
-			tests.add(currentCommand.code(this) + "; // timeout");
+			tests.add(() -> currentCommand.code(this) + "; // timeout");
 			print();
 			System.exit(0);
 			break;
@@ -453,8 +593,8 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		System.out.println("     }");
 		System.out.println("  }\n");
 		System.out.println("  public void test() {");
-		for (String test : tests) {
-			System.out.println("    " + test);
+		for (Supplier<String> test : tests) {
+			System.out.println("    " + test.get());
 		}
 		System.out.println("  }");
 		System.out.println("}");
