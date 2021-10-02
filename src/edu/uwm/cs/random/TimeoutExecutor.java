@@ -7,14 +7,15 @@ package edu.uwm.cs.random;
  */
 public class TimeoutExecutor {
 	private final Runnable action;
-	private Thread myThread = new Thread(() -> run());
+	private Thread myThread;
 	
-	private volatile long millis = 0;
-	private volatile boolean executed = false;
+	private long timeoutDeadline; // when timeout should happen
+	private boolean executed = false;
 	
 	public TimeoutExecutor(Runnable timeoutAction, long milliseconds) {
 		action = timeoutAction;
-		millis = milliseconds;
+		timeoutDeadline = System.currentTimeMillis() + milliseconds;
+		myThread = new Thread(() -> run());
 		myThread.start();
 	}
 
@@ -27,8 +28,7 @@ public class TimeoutExecutor {
 		synchronized (myThread) {
 			if (executed) return false;
 			if (!myThread.isAlive()) return true;
-			millis = newMillis;
-			myThread.notify();
+			timeoutDeadline = System.currentTimeMillis() + newMillis;
 		}
 		return true;
 	}
@@ -41,7 +41,7 @@ public class TimeoutExecutor {
 	public boolean cancel() {
 		synchronized (myThread) {
 			if (executed) return false;
-			millis = -1;
+			timeoutDeadline = -1;
 			if (!myThread.isAlive()) return true;
 			myThread.interrupt();
 		}
@@ -68,23 +68,17 @@ public class TimeoutExecutor {
 	
 	private void run() {
 		try {
-			synchronized (myThread) {
-				for (;;) {
-					long m = millis;
-					if (m < 0) return;
-					long then = System.currentTimeMillis();
-					millis = 0;
-					if (m > 0) myThread.wait(m);
-					long now = System.currentTimeMillis();
-					if (millis == 0) {
-						long diff = now - then;
-						if (diff >= m) break;
-						millis = m - diff;
-					}
-					// otherwise start over
+			for (;;) {
+				long deadline;
+				synchronized (myThread) {
+					deadline = timeoutDeadline;
 				}
-				executed = true;
+				if (deadline == -1) return;
+				long sleepTime = deadline - System.currentTimeMillis();
+				if (sleepTime < 0) break;
+				Thread.sleep(sleepTime);
 			}
+			executed = true;
 			action.run();
 		} catch (InterruptedException e) {
 			return;
