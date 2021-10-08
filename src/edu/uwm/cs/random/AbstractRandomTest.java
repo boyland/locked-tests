@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import edu.uwm.cs.util.Consumer4;
+import edu.uwm.cs.util.Function4;
 import edu.uwm.cs.util.TriConsumer;
 import edu.uwm.cs.util.TriFunction;
 import edu.uwm.cs.util.Union;
@@ -253,6 +255,15 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			}
 		};
 	}
+	protected <A,B,C,D,T> Function4<A,B,C,D,Result<T>> lift(Function4<A,B,C,D,T> func) {
+		return (a,b,c,d) -> {
+			try {
+				return new NormalResult<T>(func.apply(a,b,c,d));
+			} catch (Exception|Error e) {
+				return new ExceptionResult<T>(e);
+			}
+		};
+	}
 
 	protected <A> Function<A,Result<Void>> lift(Consumer<A> func) {
 		return (a) -> {
@@ -278,6 +289,16 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		return (a,b,c) -> {
 			try {
 				func.accept(a, b, c);
+				return NormalResult.voidResult();
+			} catch (Exception|Error e) {
+				return new ExceptionResult<Void>(e);
+			}
+		};
+	}
+	protected <A,B,C,D> Function4<A,B,C,D,Result<Void>> lift(Consumer4<A,B,C,D> func) {
+		return (a,b,c,d) -> {
+			try {
+				func.accept(a, b, c, d);
 				return NormalResult.voidResult();
 			} catch (Exception|Error e) {
 				return new ExceptionResult<Void>(e);
@@ -398,13 +419,13 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	}
 	
 	/**
-	 * Construct a command builder for a method on some object
+	 * Construct a command builder for a method on the main class
 	 * that takes a pure parameter.
-	 * @param desc description of object running method
 	 * @param rfunc lifted reference implementation
 	 * @param sfunc lifted SUT implementation
 	 * @param mname method name (when generating tests)
-	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @return function taking an index of the object to run the method on,
+	 * and the argument object, and returning a command.
 	 * @see {@link #lift(Function)} for pure results
 	 * @see {@link #lift(TestClass, Function) for object results
 	 */
@@ -419,7 +440,8 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * @param rfunc lifted reference implementation
 	 * @param sfunc lifted SUT implementation
 	 * @param mname method name (when generating tests)
-	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @return function taking an index of the object to run the method on,
+	 * and the argument object, and returning a command.
 	 * @see {@link #lift(Function)} for pure results
 	 * @see {@link #lift(TestClass, Function) for object results
 	 */
@@ -440,6 +462,99 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	protected <A,T,U> BiFunction<Integer,A,Command<?>> build(TestClass<U,U> desc, BiFunction<U,A,Result<T>> rfunc, String mname) {
 		return build(desc, rfunc, rfunc, mname);
 	}
+
+	/**
+	 * Construct a command builder for a method on the main class
+	 * that takes two pure parameters.
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,T,U,V> TriFunction<Integer,A,B,Command<?>> build(TriFunction<R,A,B,Result<T>> rfunc, TriFunction<S,A,B,Result<T>> sfunc, String mname) {
+		return build(mainClass, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes two pure parameters.
+	 * @param desc description of object running method
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,T,U,V> TriFunction<Integer,A,B,Command<?>> build(TestClass<U,V> desc, TriFunction<U,A,B,Result<T>> rfunc, TriFunction<V,A,B,Result<T>> sfunc, String mname) {
+		return (i,a,b) -> new Command.Command2<>(desc, i, a, b, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes two pure parameters.
+	 * @param desc description of object running method
+	 * @param func lifted implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,T,U> TriFunction<Integer,A,B,Command<?>> build(TestClass<U,U> desc, TriFunction<U,A,B,Result<T>> func, String mname) {
+		return build(desc, func, func, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on the main class
+	 * that takes two pure parameters.
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,C,T,U,V> Function4<Integer,A,B,C,Command<?>> build(Function4<R,A,B,C,Result<T>> rfunc, Function4<S,A,B,C,Result<T>> sfunc, String mname) {
+		return build(mainClass, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes two pure parameters.
+	 * @param desc description of object running method
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,C,T,U,V> Function4<Integer,A,B,C,Command<?>> build(TestClass<U,V> desc, Function4<U,A,B,C,Result<T>> rfunc, Function4<V,A,B,C,Result<T>> sfunc, String mname) {
+		return (i,a,b,c) -> new Command.Command3<>(desc, i, a, b, c, rfunc, sfunc, mname);
+	}
+
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes two pure parameters.
+	 * @param desc description of object running method
+	 * @param func lifted implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on,
+	 * and the two argument objects, and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,C,T,U> Function4<Integer,A,B,C,Command<?>> build(TestClass<U,U> desc, Function4<U,A,B,C,Result<T>> func, String mname) {
+		return build(desc, func, func, mname);
+	}
+
 
 	/**
 	 * Construct a command builder for a method on the main object

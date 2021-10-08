@@ -4,6 +4,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import edu.uwm.cs.util.Function4;
 import edu.uwm.cs.util.TriFunction;
 import edu.uwm.cs.util.Union;
 
@@ -283,6 +284,45 @@ public interface Command<T> {
 		public CommandR(TestClass<R,S> tc, int i, int j, BiFunction<R,R,Result<T>> rf, BiFunction<S,S,Result<T>> sf, String mn) {
 			super(tc,tc,i,j,rf,sf,mn);
 		}
+	}
+
+	public static class Command3<R,S,T,U,V,W> implements Command<T> {
+		private final TestClass<R,S> testClass;
+		private final int index;
+		private final U arg1;
+		private final V arg2;
+		private final W arg3;
+		protected final Function4<R,U,V,W,Result<T>> refFunc;
+		protected final Function4<S,U,V,W,Result<T>> sutFunc;
+		protected final String methodName;
+		
+		public Command3(TestClass<R,S> tc, int i, U a, V b, W c, Function4<R,U,V,W,Result<T>> rf, Function4<S,U,V,W,Result<T>> sf, String mn) {
+			testClass = tc;
+			index = i;
+			arg1 = a;
+			arg2 = b;
+			arg3 = c;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
+		}
+
+		@Override
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(testClass.getRefObject(index),arg1,arg2,arg3);
+			} else {
+				return sutFunc.apply(testClass.getSUTObject(index),arg1,arg2,arg3);
+			}
+		}
+
+		@Override
+		public String code(LiteralBuilder lb) {
+			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + 
+					lb.toString(arg1) + "," + 
+					lb.toString(arg2) + "," + 
+					lb.toString(arg3) + ")";
+		}		
 	}
 
 }

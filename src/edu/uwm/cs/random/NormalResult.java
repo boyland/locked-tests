@@ -1,5 +1,7 @@
 package edu.uwm.cs.random;
 
+import java.util.Arrays;
+
 /**
  * An execution that terminates normally
  * with a result value.
@@ -29,6 +31,7 @@ public class NormalResult<T> implements Result<T> {
 		NormalResult<?> other = (NormalResult<?>)x;
 		if (value == null) return other.value == null;
 		if (other.value == null) return false;
+		if (value instanceof Object[]) return Arrays.equals((Object[])value,(Object[])other.value);
 		return value.equals(other.value);
 	}
 
@@ -36,9 +39,16 @@ public class NormalResult<T> implements Result<T> {
 	public String genAssert(LiteralBuilder lb, String code) {
 		if (value == null) {
 			return "assertNull(" + code + ");";
+		} else if (value instanceof Object[]) {
+			StringBuilder sb = new StringBuilder();
+			for (Object x : ((Object[])value)) {
+				if (sb.length() > 0) sb.append(',');
+				sb.append(lb.toString(x));
+			}
+			return "assertEquals(java.util.Arrays.asList(" + sb + "),java.util.Arrays.asList(" + code + "));";
 		} else {
 			return "assertEquals(" + lb.toString(value) + "," + code + ");";
-		}
+		} 
 	}
 	
 	private static final NormalResult<?> nullResult = new NormalResult<Object>(null);
