@@ -2,6 +2,7 @@ package edu.uwm.cs.random;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	
 	private Map<Object,String> registry = new HashMap<>();
 	private Map<String,Object> testObjects = new HashMap<>();
-	private Map<Object,Integer> registeredIndex = new HashMap<>();
+	private Map<Object,Integer> registeredIndex = new IdentityHashMap<>();
 
 	public class RegisteredClass<T,U> implements TestClass<T,U> {
 		Class<T> refClass;
