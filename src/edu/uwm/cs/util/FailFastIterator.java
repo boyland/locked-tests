@@ -11,11 +11,20 @@ import java.util.function.Supplier;
 public class FailFastIterator<E> extends FilterIterator<E> {
 
 	private Supplier<Integer> containerVersion;
+	private Supplier<Integer> newContainerVersion;
 	private int version;
 	
 	public FailFastIterator(Iterator<E> it, Supplier<Integer> getVersion) {
 		super(it);
 		containerVersion = getVersion;
+		newContainerVersion = getVersion;
+		version = containerVersion.get();
+	}
+
+	public FailFastIterator(Iterator<E> it, Supplier<Integer> getVersion, Supplier<Integer> getNewVersion) {
+		super(it);
+		containerVersion = getVersion;
+		newContainerVersion = getNewVersion;
 		version = containerVersion.get();
 	}
 
@@ -41,7 +50,7 @@ public class FailFastIterator<E> extends FilterIterator<E> {
 	public void remove() {
 		checkVersion();
 		super.remove();
-		version = containerVersion.get();
+		version = newContainerVersion.get();
 	}
 	
 }
