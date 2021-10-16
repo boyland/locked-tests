@@ -207,7 +207,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	private Random random = new Random();
 	
 	/**
-	 * Create a random testing situation.
+	 * Create a random testing situation, where assertions are required to be enabled for the SUT.
 	 * @param rClass class of the reference type
 	 * @param sClass class of the SUT type
 	 * @param typename name of the SUT class to use for SUT variables
@@ -217,13 +217,34 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * @param testSize maximum number of commands in a single test
 	 */
 	protected AbstractRandomTest(Class<R> rClass, Class<S> sClass, String typename, String prefix, int total, int testSize) {
+		this(rClass, sClass, typename, prefix, total, testSize, true);
+	}
+
+	/**
+	 * Create a random testing situation.
+	 * @param rClass class of the reference type
+	 * @param sClass class of the SUT type
+	 * @param typename name of the SUT class to use for SUT variables
+	 * @param prefix name to use for local variables of the SUT in the test
+	 * @param total total number of commands to generate (unless
+	 * a failure is found earlier).
+	 * @param testSize maximum number of commands in a single test
+	 * @param assertsRequired whether to require assertions to be enabled.
+	 */
+	protected AbstractRandomTest(Class<R> rClass, Class<S> sClass, String typename, String prefix, int total, int testSize, boolean assertsRequired) {
 		refClass = rClass;
 		sutClass = sClass;
 		maxTests = total;
 		maxTestSize = testSize;
 		mainClass = registerMutableClass(rClass, sClass, typename, prefix);
+		if (!sClass.desiredAssertionStatus()) {
+			System.err.println("Turn on assertions to run random testing.");
+			System.err.println("e.g., in Eclipse, add -ea in the VM Arguments box of the Arguments tab of the");
+			System.err.println("Run Configuration for this application.");
+			System.exit(1);
+		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	protected <T> Class<java.util.Iterator<T>> iteratorClass() {
 		return (Class<java.util.Iterator<T>>)(Class<?>)Iterator.class;
