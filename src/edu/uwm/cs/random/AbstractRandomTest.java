@@ -377,6 +377,43 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	}
 	
 	/**
+	 * Construct a command that calls a method that returns the same type (e.g. clone)
+	 * @param desc description of the registered type
+	 * @param func1 first clone method
+	 * @param func2 second clone method
+	 * @return command to create an instance using clone.
+	 */
+	protected <U,V> Function<Integer,Command<?>> clone(TestClass<U,V> desc, Function<U,U> func1, Function<V,V> func2, String mname) {
+		Function<U,Result<Union<U,V>>> lift1 = (u) -> {
+			try {
+				return new ObjectResult<>(desc,func1.apply(u));
+			} catch (Error|Exception ex) {
+				return new ExceptionResult<>(ex);
+			}
+		};
+		Function<V,Result<Union<U,V>>> lift2 = (v) -> {
+			try {
+				return new ObjectResult<>(func2.apply(v), desc);
+			} catch (Error|Exception ex) {
+				return new ExceptionResult<>(ex);
+			}
+		};
+		return (i) -> new Command.Command0<U,V,Union<U,V>>(desc,i,lift1,lift2,mname);
+	}
+	
+	/**
+	 * Construct a command that calls a method on the main classes that returns
+	 * the same type (e.g "clone").
+	 * @param func1 unlifted method
+	 * @param func2 unlifted method
+	 * @param mname method name, e.g. "clone"
+	 * @return
+	 */
+	protected Function<Integer,Command<?>> clone(Function<R,R> func1, Function<S,S> func2, String mname) {
+		return clone(mainClass,func1,func2,mname);
+	}
+	
+	/**
 	 * Construct a command builder for a method that is run on the main class.  If the result is
 	 * an object result, the lifting needs to take the test class description.
 	 * @param rfunc lifted method in reference implementation
@@ -698,7 +735,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			return;	
 		}
 		printImports();
-		System.out.println("public class TestGen extends TestCase {");
+		System.out.println("\npublic class TestGen extends TestCase {");
 		System.out.println("  protected void assertException(Class<?> exc, Runnable r) {");
 		System.out.println("     try {");
 		System.out.println("       r.run();");

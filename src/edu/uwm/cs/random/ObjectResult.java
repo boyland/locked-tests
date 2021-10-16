@@ -14,6 +14,7 @@ import edu.uwm.cs.util.Union;
 public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	private final TestClass<R,S> desc;
 	private boolean newObjectResult;
+	private boolean sutHasValue;
 	
 	public ObjectResult(TestClass<R,S> d, R value) {
 		super(Union.makeR(value));
@@ -43,15 +44,18 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	@Override
 	public boolean includes(Result<Union<R,S>> x) {
 		if (super.getValue() == null) return super.includes(x);
+		R ref = value.getR();
+		int index = desc.indexOf(ref);
+		if (index == -1) {
+			newObjectResult = true; // do it before checking otherValue
+		}
 		if (!(x instanceof NormalResult<?>)) return false;
 		Union<R,S> otherValue = x.getValue();
 		if (otherValue == null) return false;
-		R ref = value.getR();
 		S sut = otherValue.getS();
-		int index = desc.indexOf(ref);
 		if (index == -1) {
-			newObjectResult = true;
 			desc.register(ref, sut);
+			sutHasValue = true;
 			return true;
 		} else {
 			return sut == desc.getSUTObject(index);
@@ -63,7 +67,11 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 		if (value == null) return super.genAssert(lb, code);
 		String name = lb.toString(value.getR());
 		if (newObjectResult) {
-			return desc.getTypeName() + " " + name + " = " + code + ";";
+			if (sutHasValue) {
+				return desc.getTypeName() + " " + name + " = " + code + ";";
+			} else {
+				return "assertNotNull(" + code + ");";
+			}
 		} else {
 			return "assertSame(" + name + "," + code + ");";
 		}
