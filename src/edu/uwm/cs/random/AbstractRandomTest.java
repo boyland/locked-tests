@@ -766,6 +766,9 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		System.out.println("       assertTrue(\"threw wrong exception type.\",exc.isInstance(e));");
 		System.out.println("     }");
 		System.out.println("  }\n");
+		System.out.println("  protected void assertEquals(int expected, Integer result) {");
+		System.out.println("     super.assertEquals(new Integer(expected),result);");
+		System.out.println("  }\n");
 		System.out.println("  public void test() {");
 		for (Supplier<String> test : tests) {
 			System.out.println("    " + test.get());
