@@ -41,8 +41,10 @@ public class NormalResult<T> implements Result<T> {
 			return "assertNull(" + code + ");";
 		} else if (value instanceof Object[]) {
 			StringBuilder sb = new StringBuilder();
-			for (Object x : ((Object[])value)) {
+			Object[] array = (Object[])value;
+			for (Object x : array) {
 				if (sb.length() > 0) sb.append(',');
+				else if (array.length == 1 && (array[0] == null || array[0] instanceof Object[])) sb.append("(Object)");
 				sb.append(lb.toString(x));
 			}
 			return "assertEquals(java.util.Arrays.asList(" + sb + "),java.util.Arrays.asList(" + code + "));";
