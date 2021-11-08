@@ -168,6 +168,10 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		if (x instanceof Union<?,?>) {
 			x = ((Union<?,?>)x).get();
 		}
+		if (x instanceof String) {
+			String lit = edu.uwm.cs.junit.Util.toString(x);
+			return "new String(" + lit + ")";
+		}
 		if (x == null || x instanceof String || x instanceof Character || x instanceof Number) return edu.uwm.cs.junit.Util.toString(x);
 		String name = registry.get(x);
 		if (name != null) return name;
