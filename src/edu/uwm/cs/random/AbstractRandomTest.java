@@ -72,7 +72,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	protected final Class<R> refClass;
 	protected final Class<S> sutClass;
 	
-	private Map<Object,String> registry = new HashMap<>();
+	private Map<Object,String> registry = new IdentityHashMap<>();
 	private Map<String,Object> testObjects = new HashMap<>();
 	private Map<Object,Integer> registeredIndex = new IdentityHashMap<>();
 
