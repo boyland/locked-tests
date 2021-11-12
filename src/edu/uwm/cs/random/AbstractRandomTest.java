@@ -748,36 +748,45 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		System.out.println("import junit.framework.TestCase;\n");		
 	}
 	
+	/**
+	 * Print out methods at the beginning of the test suite.
+	 * This implementation prints "assertException" and
+	 * a version of "assertEquals" that allows an Integer to be compared to an int.
+	 */
+	protected void printHelperMethods() {
+		System.out.println("\tprotected void assertException(Class<?> exc, Runnable r) {");
+		System.out.println("\t\ttry {");
+		System.out.println("\t\t\tr.run();");
+		System.out.println("\t\t\tassertFalse(\"should have thrown an exception.\",true);");
+		System.out.println("\t\t} catch (RuntimeException e) {");
+		System.out.println("\t\t\tif (exc == null) return;");
+		System.out.println("\t\t\tassertTrue(\"threw wrong exception type.\",exc.isInstance(e));");
+		System.out.println("\t\t}");
+		System.out.println("\t}\n");
+		System.out.println("\tprotected void assertEquals(int expected, Integer result) {");
+		System.out.println("\t\tsuper.assertEquals(new Integer(expected),result);");
+		System.out.println("\t}\n");		
+	}
+	
 	public void print() {
 		if (tests.isEmpty()) {
 			System.out.println("import junit.framework.TestCase;\n");
 			System.out.println("public class TestGen extends TestCase {");
-			System.out.println("  public void test() {");
-			System.out.println("    assertTrue(\"Everything is fine\",true);");
-			System.out.println("  }");
+			System.out.println("\tpublic void test() {");
+			System.out.println("\t\tassertTrue(\"Everything is fine\",true);");
+			System.out.println("\t}");
 			System.out.println("}");
 			System.out.println("\n// Congratulations: no bugs found!");
 			return;	
 		}
 		printImports();
 		System.out.println("\npublic class TestGen extends TestCase {");
-		System.out.println("  protected void assertException(Class<?> exc, Runnable r) {");
-		System.out.println("     try {");
-		System.out.println("       r.run();");
-		System.out.println("       assertFalse(\"should have thrown an exception.\",true);");
-		System.out.println("     } catch (RuntimeException e) {");
-		System.out.println("       if (exc == null) return;");
-		System.out.println("       assertTrue(\"threw wrong exception type.\",exc.isInstance(e));");
-		System.out.println("     }");
-		System.out.println("  }\n");
-		System.out.println("  protected void assertEquals(int expected, Integer result) {");
-		System.out.println("     super.assertEquals(new Integer(expected),result);");
-		System.out.println("  }\n");
-		System.out.println("  public void test() {");
+		printHelperMethods();
+		System.out.println("\tpublic void test() {");
 		for (Supplier<String> test : tests) {
-			System.out.println("    " + test.get());
+			System.out.println("\t\t" + test.get());
 		}
-		System.out.println("  }");
+		System.out.println("\t}");
 		System.out.println("}");
 	}
 	
