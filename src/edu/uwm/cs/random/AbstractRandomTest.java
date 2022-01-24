@@ -764,7 +764,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		System.out.println("\t\t}");
 		System.out.println("\t}\n");
 		System.out.println("\tprotected void assertEquals(int expected, Integer result) {");
-		System.out.println("\t\tsuper.assertEquals(new Integer(expected),result);");
+		System.out.println("\t\tsuper.assertEquals(Integer.valueOf(expected),result);");
 		System.out.println("\t}\n");		
 	}
 	
