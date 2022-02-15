@@ -669,9 +669,9 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		REFERENCE, SUT, FRAMEWORK;
 	}
 	private List<Supplier<String>> tests = new ArrayList<>();	
-	private TestState currentState;
-	private Command<?> currentCommand;
-	private TimeoutExecutor timer = new TimeoutExecutor(() -> doTimeout(), timeout);
+	private volatile TestState currentState = TestState.FRAMEWORK;
+	private volatile Command<?> currentCommand;
+	private TimeoutExecutor timer = new TimeoutExecutor(() -> doTimeout(), timeout*5); // startup can be slow
 
 	/**
 	 * Compute a random command
