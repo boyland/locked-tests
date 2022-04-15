@@ -65,7 +65,8 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	@Override
 	public String genAssert(LiteralBuilder lb, String code) {
 		if (value == null) return super.genAssert(lb, code);
-		String name = lb.toString(value.getR());
+		String name = desc.getIdentifier(desc.indexOf(value.getR()));
+		// String name = lb.toString(value.getR());
 		if (newObjectResult) {
 			if (sutHasValue) {
 				return desc.getTypeName() + " " + name + " = " + code + ";";

@@ -17,7 +17,7 @@ public interface TestClass<R, S> {
 	 * @return string for the type used here
 	 */
 	public String getTypeName();
-	
+
 	/**
 	 * How many instances have been registered for this type?
 	 * @return number of instances registered.
@@ -39,6 +39,13 @@ public interface TestClass<R, S> {
 	 * @return index so that getRefObject(index) == ref, or -1
 	 */
 	public int indexOf(R ref);
+	
+	/**
+	 * Return the identifier for the index.  
+	 * Typically a prefix plus the index.
+	 * @throws IllegalStateException reference is not registered yet.
+	 */
+	public String getIdentifier(int index);
 	
 	/**
 	 * Remove all the registered objects. 

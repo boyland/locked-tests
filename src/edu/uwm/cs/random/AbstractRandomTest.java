@@ -114,6 +114,13 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		}
 
 		@Override
+		public String getIdentifier(int index) {
+			if (index < 0) throw new IllegalStateException("not yet registered");
+			if (index >= refs.size()) throw new IllegalStateException("no ref for this index: " + index);
+			return prefix + index;
+		}
+		
+		@Override
 		public T getRefObject(int i) {
 			if (i < 0) return null;
 			return refs.get(i);
@@ -383,6 +390,17 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * Construct a command that creates an object on which we
 	 * can do further tests.  The result type must be registered.
 	 * @param desc description of the registered type
+	 * @param supplier constructor with no parameters
+	 * @return command to create an instance that will be registered for further method calls.
+	 */
+	protected <T,U> Command<?> create(TestClass<T,U> desc, Supplier<T> supp1, Supplier<U> supp2) {
+		return new Command.NewCommand<>(desc, supp1, supp2);
+	}
+	
+	/**
+	 * Construct a command that creates an object on which we
+	 * can do further tests.  The result type must be registered.
+	 * @param desc description of the registered type
 	 * @param func constructor with one pure parameter
 	 * @return command to create an instance that will be registered
 	 */
@@ -409,21 +427,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * @return command to create an instance using clone.
 	 */
 	protected <U,V> Function<Integer,Command<?>> clone(TestClass<U,V> desc, Function<U,U> func1, Function<V,V> func2, String mname) {
-		Function<U,Result<Union<U,V>>> lift1 = (u) -> {
-			try {
-				return new ObjectResult<>(desc,func1.apply(u));
-			} catch (Error|Exception ex) {
-				return new ExceptionResult<>(ex);
-			}
-		};
-		Function<V,Result<Union<U,V>>> lift2 = (v) -> {
-			try {
-				return new ObjectResult<>(func2.apply(v), desc);
-			} catch (Error|Exception ex) {
-				return new ExceptionResult<>(ex);
-			}
-		};
-		return (i) -> new Command.Command0<U,V,Union<U,V>>(desc,i,lift1,lift2,mname);
+		return build(desc, desc, func1, func2, mname);
 	}
 	
 	/**
@@ -480,6 +484,35 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	protected <T,U> Function<Integer,Command<?>> build(TestClass<U,U> desc, Function<U,Result<T>> rfunc, String mname) {
 		return build(desc,rfunc,rfunc,mname);
 	}
+	
+	/**
+	 * Construct a command that calls a method on objects classes that returns
+	 * of different object types
+	 * @param inDesc input object types
+	 * @param outDesc output object types
+	 * @param func1 unlifted method
+	 * @param func2 unlifted method
+	 * @param mname method name, e.g. "iterator"
+	 * @return command to call the respective methods
+	 */
+	protected <U,V,W,X> Function<Integer,Command<?>> build(TestClass<U,V> inDesc, TestClass<W,X> outDesc, Function<U,W> func1, Function<V,X> func2, String mname) {
+		Function<U,Result<Union<W,X>>> lift1 = (u) -> {
+			try {
+				return new ObjectResult<>(outDesc,func1.apply(u));
+			} catch (Error|Exception ex) {
+				return new ExceptionResult<>(ex);
+			}
+		};
+		Function<V,Result<Union<W,X>>> lift2 = (v) -> {
+			try {
+				return new ObjectResult<>(func2.apply(v), outDesc);
+			} catch (Error|Exception ex) {
+				return new ExceptionResult<>(ex);
+			}
+		};
+		return (i) -> new Command.Command0<U,V,Union<W,X>>(inDesc,i,lift1,lift2,mname);
+	}
+
 	
 	/**
 	 * Construct a command builder for a method on the main class
@@ -760,7 +793,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		System.out.println("\t\t\tassertFalse(\"should have thrown an exception.\",true);");
 		System.out.println("\t\t} catch (RuntimeException e) {");
 		System.out.println("\t\t\tif (exc == null) return;");
-		System.out.println("\t\t\tassertTrue(\"threw wrong exception type.\",exc.isInstance(e));");
+		System.out.println("\t\t\tassertTrue(\"threw wrong exception type: \" + e.getClass(),exc.isInstance(e));");
 		System.out.println("\t\t}");
 		System.out.println("\t}\n");
 		System.out.println("\tprotected void assertEquals(int expected, Integer result) {");

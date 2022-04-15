@@ -10,7 +10,6 @@ import edu.uwm.cs.util.Union;
 
 public interface Command<T> {
 	
-	//XXX: How do we handle a command that creates a new SUT ?
 	public Result<T> execute(boolean asReference);
 	
 	/**
@@ -20,6 +19,42 @@ public interface Command<T> {
 	 */
 	public String code(LiteralBuilder lb); //XXX: lb not needed (too late) 
 
+	public default String code(String template, String... args) {
+		StringBuilder sb = new StringBuilder();
+		if (args.length > 0 && template.indexOf('$') < 0) {
+			sb.append(args[0]);
+			sb.append('.');
+			sb.append(template);
+			sb.append('(');
+			int argNum = -1;
+			for (String arg : args) {
+				++argNum;
+				if (argNum == 0) continue;
+				if (argNum > 1) sb.append(',');
+				sb.append(arg);
+			}
+			sb.append(')');
+		} else {
+			int n = template.length();
+			for (int i=0; i < n; ++i) {
+				char ch = template.charAt(i);
+				if (ch == '\\') {
+					sb.append(template.charAt(++i));
+				} else if (ch == '$') {
+					int index = template.charAt(++i) - '0';
+					sb.append(args[index]);
+				} else {
+					sb.append(ch);
+				}
+			}
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * Default implementation of a command.
+	 * @param T result type
+	 */
 	public static class Default<T> implements Command<T> {
 		private final Supplier<Result<T>> refSupp;
 		private final Supplier<Result<T>> sutSupp;
@@ -176,7 +211,7 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "()";
+			return code(methodName, testClass.getIdentifier(index));
 		}		
 	}
 
@@ -208,7 +243,7 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + lb.toString(arg) + ")";
+			return code(methodName, testClass.getIdentifier(index), lb.toString(arg));
 		}		
 	}
 
@@ -242,7 +277,7 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + lb.toString(arg1) + "," + lb.toString(arg2) + ")";
+			return code(methodName, testClass.getIdentifier(index), lb.toString(arg1), lb.toString(arg2));
 		}		
 	}
 
@@ -276,7 +311,7 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return lb.toString(recClass.getRefObject(recIndex)) + "." + methodName + "(" + lb.toString(argClass.getRefObject(argIndex)) + ")";
+			return code(methodName, recClass.getIdentifier(recIndex), argClass.getIdentifier(argIndex));
 		}		
 	}
 	
@@ -318,10 +353,10 @@ public interface Command<T> {
 
 		@Override
 		public String code(LiteralBuilder lb) {
-			return lb.toString(testClass.getRefObject(index)) + "." + methodName + "(" + 
-					lb.toString(arg1) + "," + 
-					lb.toString(arg2) + "," + 
-					lb.toString(arg3) + ")";
+			return code(methodName, testClass.getIdentifier(index),
+					lb.toString(arg1),
+					lb.toString(arg2), 
+					lb.toString(arg3));
 		}		
 	}
 
