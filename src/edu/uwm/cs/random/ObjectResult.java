@@ -15,6 +15,7 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	private final TestClass<R,S> desc;
 	private boolean newObjectResult;
 	private boolean sutHasValue;
+	private boolean sutHasException;
 	
 	public ObjectResult(TestClass<R,S> d, R value) {
 		super(Union.makeR(value));
@@ -49,7 +50,10 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 		if (index == -1) {
 			newObjectResult = true; // do it before checking otherValue
 		}
-		if (!(x instanceof NormalResult<?>)) return false;
+		if (!(x instanceof NormalResult<?>)) {
+			sutHasException = true;
+			return false;
+		}
 		Union<R,S> otherValue = x.getValue();
 		if (otherValue == null) return false;
 		S sut = otherValue.getS();
@@ -65,8 +69,18 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	@Override
 	public String genAssert(LiteralBuilder lb, String code) {
 		if (value == null) return super.genAssert(lb, code);
-		String name = desc.getIdentifier(desc.indexOf(value.getR()));
-		// String name = lb.toString(value.getR());
+		if (sutHasException) {
+			return code + "; // should not crash";
+		}
+		int index = desc.indexOf(value.getR());
+		if (index == -1) {
+			// This is a fatal error with the system; this shouldn't happen
+			System.out.println("newObjectResult = " + newObjectResult);
+			System.out.println("sutHasValue = " + sutHasValue);
+			System.out.println("sutHasException = " + sutHasException);
+			throw new IllegalStateException("value not registered yet? " + value);
+		}
+		String name = desc.getIdentifier(index);
 		if (newObjectResult) {
 			if (sutHasValue) {
 				return desc.getTypeName() + " " + name + " = " + code + ";";
