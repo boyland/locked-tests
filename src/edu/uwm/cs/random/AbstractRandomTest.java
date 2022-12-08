@@ -432,6 +432,18 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	}
 	
 	/**
+	 * Construct a command that creates an object on which we
+	 * can do further tests.  The result type must be registered.
+	 * @param desc description of the registered type
+	 * @param func1 constructor for reference type with one pure parameter
+	 * @param func2 constructor with SUT type with one pure parameter
+	 * @return function to create a command to create an instance that will be registered
+	 */
+	protected <T,U,A,B> BiFunction<A,B,Command<?>> create(TestClass<T,U> desc, BiFunction<A,B,T> func1, BiFunction<A,B,U> func2) {
+		return (a,b) -> new Command.NewCommand2<>(desc, a, b, func1, func2);
+	}
+		
+	/**
 	 * Construct a command that calls a method that returns the same type (e.g. clone)
 	 * @param desc description of the registered type
 	 * @param func1 first clone method
