@@ -107,7 +107,7 @@ public interface Command<T> {
 				} else {
 					return new ObjectResult<>(sConstr.get(),testClass);
 				}
-			} catch (Exception e) {
+			} catch (Exception|AssertionError e) {
 				return new ExceptionResult<>(e);
 			}
 		}
@@ -139,7 +139,7 @@ public interface Command<T> {
 				} else {
 					return new ObjectResult<>(sConstr.apply(arg),testClass);
 				}
-			} catch (Exception e) {
+			} catch (Exception|AssertionError e) {
 				return new ExceptionResult<>(e);
 			}
 		}
@@ -173,7 +173,7 @@ public interface Command<T> {
 				} else {
 					return new ObjectResult<>(sConstr.apply(arg1,arg2),testClass);
 				}
-			} catch (Exception e) {
+			} catch (Exception|AssertionError e) {
 				return new ExceptionResult<>(e);
 			}
 		}
