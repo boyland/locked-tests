@@ -1,6 +1,7 @@
 package edu.uwm.cs.junit;
 
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.HeadlessException;
@@ -197,6 +198,7 @@ public class TestCaseUnlockDialog extends JDialog {
 	
 	public static Object show(final String[] code, final String type, final int key) throws HeadlessException {
 		final Results results = new Results();
+		if (GraphicsEnvironment.isHeadless()) throw new HeadlessException("Cannot show a window");
 		try {
 			SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
