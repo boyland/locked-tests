@@ -266,7 +266,7 @@ public class LockedTestCase extends TestCase {
 				if (type != null) System.out.println("We are expecting a value of type " + type);
 				try {
 					String response = input.readLine();
-					if (response.equals("") || response.equals("quit")) return Util.ERROR_OBJECT;
+					if (response == null || response.equals("") || response.equals("quit")) return Util.ERROR_OBJECT;
 					Object result = Util.parseObject(response);
 					if (Util.checkHash(key,result)) {
 						System.out.println("Yes, that's right.  The test is now unlocked.");
