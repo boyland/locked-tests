@@ -115,7 +115,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 
 		@Override
 		public String getIdentifier(int index) {
-			if (index < 0) throw new IllegalStateException("not yet registered");
+			if (index < 0) return "null";
 			if (index >= refs.size()) throw new IllegalStateException("no ref for this index: " + index);
 			return prefix + index;
 		}
