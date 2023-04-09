@@ -16,6 +16,7 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	private boolean newObjectResult;
 	private boolean sutHasValue;
 	private boolean sutHasException;
+	private boolean sutIsNull;
 	
 	public ObjectResult(TestClass<R,S> d, R value) {
 		super(Union.makeR(value));
@@ -55,7 +56,10 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 			return false;
 		}
 		Union<R,S> otherValue = x.getValue();
-		if (otherValue == null) return false;
+		if (otherValue == null) {
+			sutIsNull = true;
+			return false;
+		}
 		S sut = otherValue.getS();
 		if (index == -1) {
 			desc.register(ref, sut);
@@ -72,12 +76,18 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 		if (sutHasException) {
 			return code + "; // should not crash";
 		}
+		if (sutIsNull) {
+			return "assertNotNull(" + code + ");";
+		}
 		int index = desc.indexOf(value.getR());
 		if (index == -1) {
 			// This is a fatal error with the system; this shouldn't happen
 			System.out.println("newObjectResult = " + newObjectResult);
 			System.out.println("sutHasValue = " + sutHasValue);
+			System.out.println("sutisNull = " + sutIsNull);
 			System.out.println("sutHasException = " + sutHasException);
+			System.out.println("value.getR = " + value.getR());
+			System.out.println("value.getS = " + value.getS());
 			throw new IllegalStateException("value not registered yet? " + value);
 		}
 		String name = desc.getIdentifier(index);
