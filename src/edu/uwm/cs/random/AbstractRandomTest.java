@@ -860,5 +860,6 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			timer.cancel();
 		}
 		if (!timer.executed()) print();
+		clear();
 	}
 }
