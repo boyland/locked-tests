@@ -126,6 +126,14 @@ public class LockedTestCase extends TestCase {
 		String className = this.getClass().getCanonicalName();
 		lockedTestInfo = getLockedTestInfo(className + ".tst");
 	}
+	
+	/**
+	 * Create a locked test case using a different class name for the locks.
+	 * @param className name to use for the information file
+	 */
+	protected LockedTestCase(String className) {
+		lockedTestInfo = getLockedTestInfo(className + ".tst");		
+	}
 
 	/**
 	 * @param key
