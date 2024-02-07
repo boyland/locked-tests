@@ -631,7 +631,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 
 	/**
 	 * Construct a command builder for a method on the main class
-	 * that takes two pure parameters.
+	 * that takes three pure parameters.
 	 * @param rfunc lifted reference implementation
 	 * @param sfunc lifted SUT implementation
 	 * @param mname method name (when generating tests)
@@ -646,7 +646,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 
 	/**
 	 * Construct a command builder for a method on some object
-	 * that takes two pure parameters.
+	 * that takes three pure parameters.
 	 * @param desc description of object running method
 	 * @param rfunc lifted reference implementation
 	 * @param sfunc lifted SUT implementation
@@ -662,7 +662,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 
 	/**
 	 * Construct a command builder for a method on some object
-	 * that takes two pure parameters.
+	 * that takes three pure parameters.
 	 * @param desc description of object running method
 	 * @param func lifted implementation
 	 * @param mname method name (when generating tests)
@@ -722,6 +722,22 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		return build(desc, argDesc, func, func, mname);
 	}	
 	
+	/**
+	 * Construct a command builder for a method on some object
+	 * that takes an object parameter and a pure parameter.
+	 * @param desc description of object running method
+	 * @param argDesc description of the parameter object
+	 * @param rfunc lifted reference implementation
+	 * @param sfunc lifted SUT implementation
+	 * @param mname method name (when generating tests)
+	 * @return function taking an index of the object to run the method on and returning a command.
+	 * @see {@link #lift(Function)} for pure results
+	 * @see {@link #lift(TestClass, Function) for object results
+	 */
+	protected <A,B,C,T,U,V> TriFunction<Integer,Integer,C,Command<?>> build(TestClass<U,V> desc, TestClass<A,B> argDesc, TriFunction<U,A,C,Result<T>> rfunc, TriFunction<V,B,C,Result<T>> sfunc, String mname) {
+		return (i,j,c) -> new Command.CommandMP<>(desc, argDesc, i, j, c, rfunc, sfunc, mname);
+	}
+
 	static enum TestState {
 		REFERENCE, SUT, FRAMEWORK;
 	}

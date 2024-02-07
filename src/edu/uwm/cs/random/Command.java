@@ -321,6 +321,42 @@ public interface Command<T> {
 		}
 	}
 
+	public static class CommandMP<R,S,T,U,V,W> implements Command<T> {
+		protected final TestClass<R,S> recClass;
+		protected final TestClass<U,V> argClass;
+		protected final int recIndex;
+		protected final int argIndex;
+		protected final W arg;
+		protected final TriFunction<R,U,W,Result<T>> refFunc;
+		protected final TriFunction<S,V,W,Result<T>> sutFunc;
+		protected final String methodName;
+		
+		public CommandMP(TestClass<R,S> rc, TestClass<U,V> ac, int i, int j, W w, TriFunction<R,U,W,Result<T>> rf, TriFunction<S,V,W,Result<T>> sf, String mn) {
+			recClass = rc;
+			argClass = ac;
+			recIndex = i;
+			argIndex = j;
+			arg = w;
+			refFunc = rf;
+			sutFunc = sf;
+			methodName = mn;
+		}
+
+		@Override
+		public Result<T> execute(boolean asReference) {
+			if (asReference) {
+				return refFunc.apply(recClass.getRefObject(recIndex),argClass.getRefObject(argIndex),arg);
+			} else {
+				return sutFunc.apply(recClass.getSUTObject(recIndex),argClass.getSUTObject(argIndex),arg);
+			}
+		}
+
+		@Override
+		public String code(LiteralBuilder lb) {
+			return code(methodName, recClass.getIdentifier(recIndex), argClass.getIdentifier(argIndex),lb.toString(arg));
+		}		
+	}
+	
 	public static class Command3<R,S,T,U,V,W> implements Command<T> {
 		private final TestClass<R,S> testClass;
 		private final int index;
