@@ -3,10 +3,6 @@ package edu.uwm.cs.random;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import edu.uwm.cs.random.LiteralBuilder;
-import edu.uwm.cs.random.NormalResult;
-import edu.uwm.cs.random.Result;
-
 /**
  * A result that could be one of a number of possibilities.
  * If the actual result matches, we proceed assuming that value.  If it
