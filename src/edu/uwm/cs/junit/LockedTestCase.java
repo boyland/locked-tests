@@ -244,7 +244,7 @@ public class LockedTestCase extends TestCase {
 			return Util.ERROR_OBJECT;
 		}
 		int l;
-		for (l=lno-1; l >= 1 && contents[l].indexOf("void test") < 0; --l) {
+		for (l=lno; l >= 1 && contents[l].indexOf("void test") < 0; --l) {
 			String line = contents[l];
 			for (Map.Entry<String,String> e : info.replacements.entrySet()) {
 				line = line.replace(e.getKey(),e.getValue());
