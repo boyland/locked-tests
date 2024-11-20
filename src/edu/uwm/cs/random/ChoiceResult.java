@@ -43,7 +43,9 @@ public class ChoiceResult<T> implements Result<T> {
 	public boolean includes(Result<T> x) {
 		if (!(x instanceof NormalResult<?>)) {
 			if (x instanceof ChoiceResult<?>) throw new IllegalArgumentException("cannot have choices on both sides!");
-			delegate = (NormalResult<T>)NormalResult.voidResult;
+			T answer = possibilities.iterator().next();
+			delegate = new NormalResult<>(answer);
+			if (notifier != null) notifier.accept(answer);
 			return false;
 		}
 		NormalResult<?> other = (NormalResult<?>)x;
