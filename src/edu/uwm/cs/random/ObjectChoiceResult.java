@@ -51,6 +51,7 @@ public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 		if (possibilities.size() == 1) {
 			R answer = possibilities.iterator().next();
 			delegate = new ObjectResult<>(desc, answer);
+			if (notifier != null) notifier.accept(answer);
 			return delegate.includes(x);
 		}
 		if (!(x instanceof NormalResult<?>)) {
@@ -72,7 +73,7 @@ public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 			for (R rObject : possibilities) {
 				int i = desc.indexOf(rObject);
 				if (sObject == desc.getSUTObject(i)) {
-					delegate = new ObjectResult<R,S>(desc, rObject, sObject);
+					delegate = new ObjectResult<R,S>(desc, rObject);
 					if (notifier != null) notifier.accept(rObject);
 					return true;
 				}
