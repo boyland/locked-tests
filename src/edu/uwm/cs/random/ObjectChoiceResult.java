@@ -5,6 +5,15 @@ import java.util.function.Consumer;
 
 import edu.uwm.cs.util.Union;
 
+/**
+ * A result which combines the aspects of 
+ * {@link ObjectResult} and {@link ChoiceResult},
+ * except that it does not handle when one of the values
+ * is newly created.  It can only handle objects that are pre-existing.
+ * It also only can handle if the reference implementation creates this object result.
+ * @param R Reference type
+ * @param S type of the situation under test.
+ */
 public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 	private TestClass<R,S> desc;
 	private Set<R> possibilities;
@@ -13,6 +22,7 @@ public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 	
 	/**
 	 * Create a choice result.
+	 * @param d description of the connection between REF and SUT.
 	 * @param poss possibilities to chose from, must not be empty
 	 * @param not notifier to be called when choice is fixed
 	 */
@@ -37,6 +47,12 @@ public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 
 	@Override
 	public boolean includes(Result<Union<R,S>> x) {
+		if (delegate != null) return delegate.includes(x);
+		if (possibilities.size() == 1) {
+			R answer = possibilities.iterator().next();
+			delegate = new ObjectResult<>(desc, answer);
+			return delegate.includes(x);
+		}
 		if (!(x instanceof NormalResult<?>)) {
 			if (x instanceof ChoiceResult<?>) throw new IllegalArgumentException("cannot have choices on both sides!");
 			R answer = possibilities.iterator().next();
@@ -52,12 +68,14 @@ public class ObjectChoiceResult<R, S> implements Result<Union<R, S>> {
 			}
 		} else {
 			ObjectResult<R,S> other = (ObjectResult<R,S>)x;
-			// XXX: fix the remainder to use indexes etc.
-			if (possibilities.contains(other.getValue())) {
-				Union<R,S> answer = other.getValue();
-				delegate = new NormalResult<>(answer);
-				if (notifier != null) notifier.accept(answer.getR());
-				return true;
+			S sObject = other.getValue().getS();
+			for (R rObject : possibilities) {
+				int i = desc.indexOf(rObject);
+				if (sObject == desc.getSUTObject(i)) {
+					delegate = new ObjectResult<R,S>(desc, rObject, sObject);
+					if (notifier != null) notifier.accept(rObject);
+					return true;
+				}
 			}
 		}
 		delegate = new ObjectResult<>(desc, possibilities.iterator().next());
