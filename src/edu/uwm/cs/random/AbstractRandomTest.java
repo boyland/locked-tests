@@ -248,7 +248,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		maxTests = total;
 		maxTestSize = testSize;
 		mainClass = registerMutableClass(rClass, sClass, typename, prefix);
-		if (!sClass.desiredAssertionStatus()) {
+		if (assertsRequired && !sClass.desiredAssertionStatus()) {
 			System.err.println("Turn on assertions to run random testing.");
 			System.err.println("e.g., in Eclipse, add -ea in the VM Arguments box of the Arguments tab of the");
 			System.err.println("Run Configuration for this application.");
