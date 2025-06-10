@@ -34,13 +34,25 @@ public class ObjectResult<R, S> extends NormalResult<Union<R, S>> {
 	}
 	
 	/**
-	 * Create a result where the two types are the same.
+	 * Create a result with a reference value
 	 * @param d description
 	 * @param value result
-	 * @return
+	 * @return object result instance
 	 */
-	public static <T> ObjectResult<T,T> create(TestClass<T,T> d, T value) {
-		return new ObjectResult<>(d,value,value);
+	public static <T,U> ObjectResult<T,U> create(TestClass<T,U> d, T value) {
+		return new ObjectResult<>(d,value);
+	}
+	
+	/**
+	 * Create a result with a SUT value
+	 * @param T reference type
+	 * @param U SUT type
+	 * @param value value of SUT type
+	 * @param d registration
+	 * @return object result instance
+	 */
+	public static <T,U> ObjectResult<T,U> create(U value, TestClass<T,U> d) {
+		return new ObjectResult<>(value,d);
 	}
 	
 	@Override

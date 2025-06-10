@@ -339,7 +339,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 		};
 	}
 	
-	protected <A,T> Function<A,Result<Union<T,T>>> lift(TestClass<T,T> desc, Function<A,T> func) {
+	protected <A,T,U> Function<A,Result<Union<T,U>>> lift(TestClass<T,U> desc, Function<A,T> func) {
 		return (a) -> {
 			try {
 				return ObjectResult.create(desc, func.apply(a));
@@ -348,7 +348,16 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			}
 		};
 	}
-	protected <A,B,T> BiFunction<A,B,Result<Union<T,T>>> lift(TestClass<T,T> desc, BiFunction<A,B,T> func) {
+	protected <A,T,U> Function<A,Result<Union<T,U>>> lift(Function<A,U> func, TestClass<T,U> desc) {
+		return (a) -> {
+			try {
+				return ObjectResult.create(func.apply(a), desc);
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
+	protected <A,B,T,U> BiFunction<A,B,Result<Union<T,U>>> lift(TestClass<T,U> desc, BiFunction<A,B,T> func) {
 		return (a,b) -> {
 			try {
 				return ObjectResult.create(desc, func.apply(a,b));
@@ -357,10 +366,28 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 			}
 		};
 	}
-	protected <A,B,C,T> TriFunction<A,B,C,Result<Union<T,T>>> lift(TestClass<T,T> desc, TriFunction<A,B,C,T> func) {
+	protected <A,B,T,U> BiFunction<A,B,Result<Union<T,U>>> lift(BiFunction<A,B,U> func, TestClass<T,U> desc) {
+		return (a,b) -> {
+			try {
+				return ObjectResult.create(func.apply(a,b), desc);
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
+	protected <A,B,C,T,U> TriFunction<A,B,C,Result<Union<T,U>>> lift(TestClass<T,U> desc, TriFunction<A,B,C,T> func) {
 		return (a,b,c) -> {
 			try {
 				return ObjectResult.create(desc, func.apply(a,b,c));
+			} catch (Exception|Error e) {
+				return new ExceptionResult<>(e);
+			}
+		};
+	}
+	protected <A,B,C,T,U> TriFunction<A,B,C,Result<Union<T,U>>> lift(TriFunction<A,B,C,U> func, TestClass<T,U> desc) {
+		return (a,b,c) -> {
+			try {
+				return ObjectResult.create(func.apply(a,b,c), desc);
 			} catch (Exception|Error e) {
 				return new ExceptionResult<>(e);
 			}
