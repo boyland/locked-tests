@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 
 import edu.uwm.cs.util.Consumer4;
 import edu.uwm.cs.util.Function4;
+import edu.uwm.cs.util.TimeoutExecutor;
 import edu.uwm.cs.util.TriConsumer;
 import edu.uwm.cs.util.TriFunction;
 import edu.uwm.cs.util.Union;
