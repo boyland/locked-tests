@@ -11,7 +11,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 public class TestRunner implements TestListener {
-	private static final String VERSION = "0.0.1";
+	private static final String VERSION = "1.0.0";
 
 	public enum Disposition {
 		PASSED, TIMEOUT, FAILURE, ERROR;
@@ -55,7 +55,10 @@ public class TestRunner implements TestListener {
 	private void printResults() {
 		System.out.println("==========");
 		for (Map.Entry<String,Disposition> e : results.entrySet()) {
-			System.out.println(e.getKey() + ": " + e.getValue());
+			String testName = e.getKey();
+			int paren = testName.indexOf('(');
+			if (paren > 0) testName = testName.substring(0, paren);
+			System.out.println(testName + ": " + e.getValue());
 		}
 	}
 	
@@ -120,6 +123,7 @@ public class TestRunner implements TestListener {
 			System.err.println("Expected a class name to run tests from.");
 			System.exit(1);
 		}
+		System.out.println("TestRunner version " + VERSION + " with timeout = " + timeoutMillis + " ms.");
 		doRun(testClass);
 	}
 	
