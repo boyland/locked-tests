@@ -11,7 +11,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 public class TestRunner implements TestListener {
-	private static final String VERSION = "1.0.0";
+	private static final String VERSION = "1.0.1";
 
 	public enum Disposition {
 		PASSED, TIMEOUT, FAILURE, ERROR;
@@ -20,6 +20,7 @@ public class TestRunner implements TestListener {
 	private boolean verbose = false;
 	private long timeoutMillis = 0;
 	private TimeoutExecutor timeout = null;
+	private boolean ok = true;
 	private Map<String,Disposition> results = new LinkedHashMap<>();
 	
 	private Test currentTest;
@@ -37,6 +38,7 @@ public class TestRunner implements TestListener {
 		if (verbose) System.out.println("Error in " + test);
 		if (timeout != null && !timeout.defer(timeoutMillis)) return;
 		currentDisposition = Disposition.ERROR;
+		ok = false;
 	}
 
 	@Override
@@ -44,6 +46,7 @@ public class TestRunner implements TestListener {
 		if (verbose) System.out.println("Failure in " + test);
 		if (timeout != null && !timeout.defer(timeoutMillis)) return;
 		currentDisposition = Disposition.FAILURE;
+		ok = false;
 	}
 
 	@Override
@@ -60,11 +63,18 @@ public class TestRunner implements TestListener {
 			if (paren > 0) testName = testName.substring(0, paren);
 			System.out.println(testName + ": " + e.getValue());
 		}
+		if (ok) {
+			// fake standard runner:
+			System.out.println("OK (" + results.size() + " tests)\n");
+		} else {
+			System.out.println("FAILURES!!!\n");
+		}
 	}
 	
 	private void timeoutTest() {
 		currentDisposition = Disposition.TIMEOUT;
 		results.put(currentTest.toString(), Disposition.TIMEOUT);
+		ok = false;
 		printResults();
 		System.exit(1);
 	}
