@@ -15,7 +15,7 @@ public abstract class Union<R, S> {
 	@Override
 	public String toString() {
 		Object x = get();
-		return "Union(" + x + ":" + x.getClass() + ")";
+		return getClass().getSimpleName() + "(" + x + ":" + x.getClass() + ")";
 	}
 	
 	public static <R,S> Union<R,S> makeR(R x) { 
