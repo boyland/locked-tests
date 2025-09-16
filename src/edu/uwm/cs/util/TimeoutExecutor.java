@@ -81,7 +81,7 @@ public class TimeoutExecutor {
 			executed = true;
 			action.run();
 		} catch (InterruptedException e) {
-			return;
+			// ignore
 		}
 	}
 }

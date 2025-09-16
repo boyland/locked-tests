@@ -140,5 +140,6 @@ public class TestRunner implements TestListener {
 	public static void main(String[] args) {
 		TestRunner r= new TestRunner();
 		r.start(args);
+		System.exit(0);
 	}
 }
