@@ -11,7 +11,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 public class TestRunner implements TestListener {
-	private static final String VERSION = "1.0.1";
+	private static final String VERSION = "1.1.0";
 
 	public enum Disposition {
 		PASSED, TIMEOUT, FAILURE, ERROR;
