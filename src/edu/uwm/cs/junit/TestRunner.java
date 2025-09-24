@@ -11,7 +11,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 public class TestRunner implements TestListener {
-	private static final String VERSION = "1.1.0";
+	private static final String VERSION = "1.1.1";
 
 	public enum Disposition {
 		PASSED, TIMEOUT, FAILURE, ERROR;
@@ -56,7 +56,7 @@ public class TestRunner implements TestListener {
 	}
 
 	private void printResults() {
-		System.out.println("==========");
+		System.out.println("\n==========");
 		for (Map.Entry<String,Disposition> e : results.entrySet()) {
 			String testName = e.getKey();
 			int paren = testName.indexOf('(');
