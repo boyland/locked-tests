@@ -16,5 +16,11 @@ ${TESTBIN}:
 	@echo Then come back and make build-plugin
 	false
 
+DEPENDS= ../../etc/junit.jar
+
+build:
+	mkdir -p bin
+	(cd src; javac -d ../bin -cp .:../${DEPENDS} edu/uwm/cs/junit/*.java edu/uwm/cs/util/*.java edu/uwm/cs/random/*.java )
+
 clean:
 	rm -rf bin edu*.jar
