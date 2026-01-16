@@ -1,17 +1,19 @@
 package edu.uwm.cs.junit;
 
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import edu.uwm.cs.util.TimeoutExecutor;
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestListener;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 public class TestRunner implements TestListener {
-	private static final String VERSION = "1.1.1";
+	private static final String VERSION = "1.2.0";
 
 	public enum Disposition {
 		PASSED, TIMEOUT, FAILURE, ERROR;
@@ -37,6 +39,7 @@ public class TestRunner implements TestListener {
 	public void addError(Test test, Throwable e) {
 		if (verbose) System.out.println("Error in " + test);
 		if (timeout != null && !timeout.defer(timeoutMillis)) return;
+		if (verbose) e.printStackTrace();
 		currentDisposition = Disposition.ERROR;
 		ok = false;
 	}
@@ -45,6 +48,7 @@ public class TestRunner implements TestListener {
 	public void addFailure(Test test, AssertionFailedError e) {
 		if (verbose) System.out.println("Failure in " + test);
 		if (timeout != null && !timeout.defer(timeoutMillis)) return;
+		if (verbose) e.printStackTrace();
 		currentDisposition = Disposition.FAILURE;
 		ok = false;
 	}
@@ -93,8 +97,32 @@ public class TestRunner implements TestListener {
 		printResults();
 	}
 	
-	private void start(String[] args) {
+	private void doRun(Class<?> testClass, String name) {
+		TestSuite suite = new TestSuite(testClass);
+		TestResult result = new TestResult();
+		result.addListener(this);
+		Enumeration<Test> tests = suite.tests();
+		if (timeoutMillis > 0) {
+			timeout = new TimeoutExecutor(() -> timeoutTest(), timeoutMillis);
+		}
+		while (tests.hasMoreElements()) {
+			Test t = tests.nextElement();
+			if (t instanceof TestCase) {
+				TestCase c = (TestCase)t;
+				if (name.equals(c.getName())) {
+					suite.runTest(t, result);
+				}
+			}
+		}
+		if (timeout != null) {
+			if (!timeout.cancel()) return;
+		}
+		printResults();
+	}
+	
+	private void start(String[] args) throws NoSuchMethodException, SecurityException {
 		Class<?> testClass = null;
+		String testName = null;
 		for (int i=0; i < args.length; ++i) {
 			if (args[i].startsWith("-")) {
 				switch(args[i]) {
@@ -118,14 +146,20 @@ public class TestRunner implements TestListener {
 				}
 			} else {
 				if (testClass != null) {
-					System.err.println("Too many classes: " + args[i]);
-					System.exit(1);
-				}
-				try {
-					testClass = Class.forName(args[i]);
-				} catch (ClassNotFoundException e) {
-					System.err.println("Could not find class " + args[i]);
-					System.exit(1);
+					if (testName != null) {
+						System.err.println("Too many arguments: " + args[i]);
+						System.exit(1);
+					} else {
+						testName = args[i];
+						testClass.getMethod(testName, new Class[0]);
+					}
+				} else {
+					try {
+						testClass = Class.forName(args[i]);
+					} catch (ClassNotFoundException e) {
+						System.err.println("Could not find class " + args[i]);
+						System.exit(1);
+					}
 				}
 			}
 		}
@@ -134,10 +168,14 @@ public class TestRunner implements TestListener {
 			System.exit(1);
 		}
 		System.out.println("TestRunner version " + VERSION + " with timeout = " + timeoutMillis + " ms.");
-		doRun(testClass);
+		if (testName == null) {
+			doRun(testClass);
+		} else {
+			doRun(testClass, testName);
+		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NoSuchMethodException, SecurityException {
 		TestRunner r= new TestRunner();
 		r.start(args);
 		System.exit(0);
