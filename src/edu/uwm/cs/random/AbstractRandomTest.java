@@ -622,7 +622,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * @see {@link #lift(Function)} for pure results
 	 * @see {@link #lift(TestClass, Function) for object results
 	 */
-	protected <A,B,T,U,V> TriFunction<Integer,A,B,Command<?>> build(TriFunction<R,A,B,Result<T>> rfunc, TriFunction<S,A,B,Result<T>> sfunc, String mname) {
+	protected <A,B,T> TriFunction<Integer,A,B,Command<?>> build(TriFunction<R,A,B,Result<T>> rfunc, TriFunction<S,A,B,Result<T>> sfunc, String mname) {
 		return build(mainClass, rfunc, sfunc, mname);
 	}
 
@@ -668,7 +668,7 @@ public abstract class AbstractRandomTest<R,S> implements LiteralBuilder {
 	 * @see {@link #lift(Function)} for pure results
 	 * @see {@link #lift(TestClass, Function) for object results
 	 */
-	protected <A,B,C,T,U,V> Function4<Integer,A,B,C,Command<?>> build(Function4<R,A,B,C,Result<T>> rfunc, Function4<S,A,B,C,Result<T>> sfunc, String mname) {
+	protected <A,B,C,T> Function4<Integer,A,B,C,Command<?>> build(Function4<R,A,B,C,Result<T>> rfunc, Function4<S,A,B,C,Result<T>> sfunc, String mname) {
 		return build(mainClass, rfunc, sfunc, mname);
 	}
 
