@@ -15,7 +15,6 @@ import edu.uwm.cs.random.ObjectChoiceResult;
 import edu.uwm.cs.random.ObjectResult;
 import edu.uwm.cs.random.Result;
 import edu.uwm.cs.random.TestClass;
-import edu.uwm.cs.util.Union;
 
 public class UnorderedFailFastObjectIterator<R,S> implements UnorderedObjectIterator<R,S> {
 	private final TestClass<R,S> desc;

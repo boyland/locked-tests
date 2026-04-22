@@ -3,7 +3,6 @@ package edu.uwm.cs.util;
 import java.util.Iterator;
 
 import edu.uwm.cs.random.Result;
-import edu.uwm.cs.util.Union;
 
 public interface UnorderedObjectIterator<R, S> extends Iterator<R> {
 	/**
